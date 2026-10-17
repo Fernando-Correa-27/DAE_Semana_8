@@ -46,6 +46,11 @@ class Command(BaseCommand):
             "--password",
             help="Contraseña del usuario «profe» para la interfaz web. Sin esta opción no se toca.",
         )
+        parser.add_argument(
+            "--show-tokens",
+            action="store_true",
+            help="Imprime los dos tokens en claro. Sin esta opción no sale ningún valor.",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -63,13 +68,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(
                 f"Listo: {Exam.objects.count()} exámenes, {Question.objects.count()} preguntas."
             ))
-            self.stdout.write("\nTokens (solo para esta máquina; el de la persona es el que puede borrar):")
-            self.stdout.write("  PowerShell:")
-            self.stdout.write(f'    $env:QUIZ_TOKEN_HUMANO = "{human}"')
-            self.stdout.write(f'    $env:QUIZ_TOKEN_AGENTE = "{agent}"')
-            self.stdout.write("  Bash:")
-            self.stdout.write(f"    export QUIZ_TOKEN_HUMANO={human}")
-            self.stdout.write(f"    export QUIZ_TOKEN_AGENTE={agent}")
+            self.stdout.write(
+                "\nTokens listos y NO impresos: para verlos usa --show-tokens (solo en esta "
+                "máquina; el de la persona es el que puede borrar)."
+            )
+            if options.get("show_tokens"):
+                self.stdout.write(self.style.WARNING("Tokens (solo para esta máquina):"))
+                self.stdout.write("  PowerShell:")
+                self.stdout.write(f'    $env:QUIZ_TOKEN_HUMANO = "{human}"')
+                self.stdout.write(f'    $env:QUIZ_TOKEN_AGENTE = "{agent}"')
+                self.stdout.write("  Bash:")
+                self.stdout.write(f"    export QUIZ_TOKEN_HUMANO={human}")
+                self.stdout.write(f"    export QUIZ_TOKEN_AGENTE={agent}")
             if options.get("password"):
                 self.stdout.write(
                     self.style.SUCCESS(

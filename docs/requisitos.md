@@ -6,6 +6,29 @@
 > en una sección aparte y claramente marcada, las **mejoras de interfaz gráfica** que la misión menciona pero que
 > **hoy no existen en el repositorio**.
 
+> ### ⚠️ Actualización de estado — 2026-10-16 (cierre de la implementación)
+>
+> Este documento se escribió en la **fase de análisis**. Los requisitos **no se reescriben**: se marcan aquí los
+> cambios de estado verificados, para no perder la traza de qué se pidió y qué se entregó.
+>
+> **Hecho comprobado (coordinador, repositorio en el estado actual):**
+>
+> - `python manage.py test` → **`Ran 324 tests ... OK`**. Las Partes 2 y 3 están implementadas
+>   (commits `cf61a11`); la interfaz web existe (`7c87fd9`); la revisión se corrigió y se amplió la
+>   cobertura (`7992f2a`).
+> - **R-UI-02** y **R-UI-04** están **completados** (tabla de preguntas con filtro por examen y búsqueda
+>   por texto, con URL compartible). Ver la fila de cada uno en §8.1.
+> - Los requisitos que estaban en 🔴 o ⚪ y que el backend resolvió (R-API-21…29, R-API-47…53,
+>   R-VIE-08, R-REP-07) están actualizados en [`docs/trazabilidad.md`](trazabilidad.md).
+>
+> **Lo que sigue vigente de este documento:** §3 (actores y casos de uso), §3.3 (reglas de negocio),
+> las tablas de §4 a §7 tal como están, y **§14 (preguntas abiertas)** — en particular **Q-01**: el texto
+> oficial de la rúbrica **sigue sin estar en el repositorio**, así que los cuatro criterios proceden del
+> enunciado de la misión y no de un documento leído.
+>
+> **Supuesto obsoleto que quedainvalidado por el código actual:** §8 se abrió declarando que la interfaz
+> **no existía**. Hoy existe y está documentada en el `README.md`.
+
 ---
 
 ## 1. Propósito y alcance
@@ -331,34 +354,55 @@ solo "repositorio", este bloque no aporta puntaje y es **recomendado**, no impre
 
 ---
 
-## 8. Mejoras adicionales de INTERFAZ (UI) — **no existe hoy en el repositorio**
+## 8. Mejoras adicionales de INTERFAZ (UI) — **estado actualizado: implementada**
 
-> **Hecho comprobado:** el proyecto es headless. `INSTALLED_APPS` **no** incluye `admin`, `sessions`, `messages`
-> ni `staticfiles`; `MIDDLEWARE` solo tiene `SecurityMiddleware` y `CommonMiddleware`; **no hay bloque `TEMPLATES`**;
-> **no existe** ninguna carpeta `templates/` ni `static/`; la única interfaz es `/api/docs/` (Swagger UI, que es
-> documentación del contrato, no una UI de gestión). Todo esto es verificable en `config/settings.py:13-25` y por
+> **⚠️ El bloque de arriba describía una interfaz que NO existía.** Eso era cierto en la fase de
+> análisis; hoy la interfaz **está implementada y verificada**. Se conservan los requisitos y su
+> redacción original, y se marcan los que cambiaron de estado.
+>
+> **Hecho comprobado hoy:**
+> - La interfaz existe: `quiz/web_views.py`, `quiz/web_urls.py`, `quiz/web_mixins.py`, `quiz/forms.py`,
+>   `quiz/templates/quiz/` y `quiz/static/`. `config/settings.py` incluye `sessions`, `messages`,
+>   `staticfiles`, bloque `TEMPLATES`, `LOGIN_URL`/`LOGIN_REDIRECT_URL`/`LOGOUT_REDIRECT_URL`.
+> - Verificación en vivo (coordinador): login 200; panel, listados, formularios, búsqueda/filtros y
+>   borrado 200; anónimo 302 al login; usuario no `is_staff` 403.
+> - **No** se añadió `django.contrib.admin` (R-UI-14 se sostiene).
+> - Paginación unificada en `settings.PAGE_SIZE = 5` para API e interfaz (R-UI-03 corregido: la
+>  desviación de «10 en la UI» ya no existe).
+>
+> **Decisiones:** ADR 0001 (server-rendered, sin CDN, sin admin), ADR 0002 (la UI usa el ORM a través de
+> `quiz/services.py`), ADR 0003 (una sola tabla de roles).
+>
+> **Texto original de la fase de análisis, conservado:**
+>
+> **Hecho comprobado en esa fase:** el proyecto era headless. `INSTALLED_APPS` **no** incluía `admin`, `sessions`, `messages`
+> ni `staticfiles`; `MIDDLEWARE` solo tenía `SecurityMiddleware` y `CommonMiddleware`; **no había** bloque `TEMPLATES`;
+> **no existían** carpetas `templates/` ni `static/`; la única interfaz era `/api/docs/` (Swagger UI, que es
+> documentación del contrato, no una UI de gestión). Todo esto era verificable en `config/settings.py:13-25` y por
 > ausencia de archivos.
 >
-> El proyecto de referencia S07 (F13) **sí** tiene esa capa: CBV, plantillas con `base.html` + partials,
+> El proyecto de referencia S07 (F13) **sí** tenía esa capa: CBV, plantillas con `base.html` + partials,
 > `ModelForm`, admin, sesiones/messages/csrf/auth, `STATICFILES_DIRS`, tests por app. La UI de este laboratorio
-> **sería un bloque nuevo**, no una adaptación.
-
+> **fue un bloque nuevo**, no una adaptación.
+>
 > **Estado de la decisión de arquitectura:** el arquitecto ya decidió la UI en
 > `docs/adr/0001-arquitectura-de-la-interfaz-web.md` (**server-rendered**: plantillas Django + `ModelForm` +
 > `formset` en línea para `Choice` + CBVs en `quiz/web_views.py` + una única hoja CSS propia, **sin CDN, sin
 > JavaScript obligatorio y sin `django.contrib.admin`**), con detalle en `docs/arquitectura.md`.
-> Los requisitos R-UI-01…14 de abajo se han **alineado** con esa decisión; las preguntas Q-02 y Q-03 quedan por
-> tanto **respondidas técnicamente**, aunque siguen necesitando el visto bueno del usuario sobre si la UI entra
-> en el alcance de **esta** entrega.
+> Los requisitos R-UI-01…14 de abajo están **alineados** con esa decisión y se han **implementado**.
+>
+> **Q-09 está cerrada de hecho**: la UI entró en la entrega. Si el campus confirmara lo contrario, habría que
+> retirar `quiz/web_*.py`, `quiz/templates/`, `quiz/static/` y el bloque `TEMPLATES` de `settings.py`, y volver
+> a la postura headless; se deja anotado por si la decisión se revierte.
 
 ### 8.1 Requisitos de UI
 
 | ID | Requisito | Criterio de aceptación comprobable | Prioridad |
 |---|---|---|---|
 | R-UI-01 | **Tabla de exámenes**: columnas id, título, nº de preguntas y acciones | `GET /examenes/` devuelve una tabla con una fila por examen y el nº de preguntas coincide con `question_count` del API | Imprescindible *si* la UI entra en alcance |
-| R-UI-02 | **Tabla de preguntas**: columnas id, examen, texto (truncado), nº de opciones, opción correcta, acciones | `GET /preguntas/` muestra una fila por pregunta con sus datos | Ídem |
+| R-UI-02 ✅ | **Tabla de preguntas**: columnas id, examen, texto (truncado), nº de opciones, opción correcta, acciones | `GET /preguntas/` muestra una fila por pregunta con sus datos | Ídem |
 | R-UI-03 | Las tablas son **paginadas** y navegables | Hay Anterior/Siguiente alineados con la paginación del viewset (`paginate_by=5`) | Ídem |
-| R-UI-04 | Filtro por examen y búsqueda por texto operables desde la pantalla | Los parámetros `GET` `?search=` y `?exam=` reducen la tabla; **la página es compartible por URL** | Ídem |
+| R-UI-04 ✅ | Filtro por examen y búsqueda por texto operables desde la pantalla | Los parámetros `GET` `?exam=` y `?q=` reducen la tabla; **la página es compartible por URL** | Ídem |
 | R-UI-05 | Alta/edición de pregunta en **un solo formulario** con `formset` en línea de `Choice` | Enviar 1 opción, o 2 correctas, muestra el error del campo o no-de-campo **sin perder lo ya escrito** | Ídem |
 | R-UI-06 | Confirmación antes de borrar (`DeleteView` con plantilla propia) | Un clic en «Eliminar» pide confirmación; sin `POST` de confirmación no se borra | Ídem |
 | R-UI-07 | La UI **respeta los roles** mediante la tabla de acciones compartida con la API | Con sesión de agente, «Eliminar» no se renderiza **y** la vista responde 403 si se fuerza | Ídem |
@@ -369,6 +413,24 @@ solo "repositorio", este bloque no aporta puntaje y es **recomendado**, no impre
 | R-UI-12 | La UI **funciona sin JavaScript** | Con el JS deshabilitado se pueden listar, crear, editar y borrar | Recomendado |
 | R-UI-13 | Pruebas de la UI | `quiz/tests/test_ui.py` con el patrón de S07 (`test_front_page`, `test_auth`, `test_crud`) | Recomendado |
 | R-UI-14 | Sin `django.contrib.admin` | `/admin/` no existe o da 404: **no hay una segunda vía de escritura** que esquive RN-01/RN-02 | Imprescindible *si* la UI entra en alcance |
+
+> **✅ Marcados = completados y verificados.** Evidencia:
+>
+> - **R-UI-02** → `quiz/web_views.py:109-151` (`QuestionListView`), plantilla
+>   `quiz/templates/quiz/question_list.html`, datos de `quiz/queries.py:33-40` (`questions_with_choices`).
+>   Cubierto por `quiz/tests/test_web_review.py::QuestionListingTests`.
+>   Verificado en vivo: `/preguntas/` → 200.
+> - **R-UI-04** → `QuestionListView.get_exam()` (`web_views.py:120-130`) y `get_text()`
+>   (`web_views.py:132-134`), con el estado vacío, el examen filtrado y la query base en el contexto
+>   (`web_views.py:139-151`). Ambos filtros viajan en la URL, así que `Anterior/Siguiente` los conserva.
+>   Cubierto por `test_web_review.py::QuestionListingTests` y `test_web_gaps.py::PaginationGapTests`.
+>   Verificado en vivo: búsqueda y filtros → 200.
+>
+> **Nota de nomenclatura:** el parámetro de búsqueda en la interfaz es **`?q=`**, mientras que en la API
+> es **`?search=`**. Es una diferencia real entre las dos presentaciones y está documentada en el `README.md`.
+>
+> El resto de R-UI-* y R-UI-T* se marcan en [`docs/trazabilidad.md`](trazabilidad.md), que es donde vive el
+> estado de cobertura actualizado.
 
 ### 8.2 Requisitos técnicos que la UI arrastra (decisión de arquitectura, no de producto)
 
@@ -391,9 +453,9 @@ implementar R-UI-01…14:
 
 | Bloque | Contenido | Naturaleza |
 |---|---|---|
-| **A — API headless (obligatorio del laboratorio)** | R-SER-*, R-VIE-*, R-API-01…36, R-API-47…54, R-REP-01…12 | Requisitos de la rúbrica. El 90 % ya está implementado; faltan las **Partes 2 y 3** |
+| **A — API headless (obligatorio del laboratorio)** | R-SER-*, R-VIE-*, R-API-01…36, R-API-47…54, R-REP-01…12 | Requisitos de la rúbrica. **Implementados**: las Partes 2 y 3 ya no están pendientes (`cf61a11`) |
 | **B — Frontera del agente (obligatorio, ya hecha)** | R-API-37…46 | Verificar y documentar; no tocar sin acuerdo con `arquitecto-ia` |
-| **C — Tabla de API / repositorio (criterio 4)** | R-REP-* si es lectura A; R-UI-01…14 si es lectura B | **Ambigüedad de rúbrica** → Q-01 |
+| **C — Tabla de API / repositorio (criterio 4)** | R-REP-* si es lectura A; R-UI-01…14 si es lectura B | **Ambigüedad de rúbrica** → Q-01. Ambas lecturas quedan cubiertas: el `README.md` tiene la tabla de la API **y** la interfaz existe |
 | **D — Mejoras de calidad (no en el enunciado)** | Ordenación, unicidad de título, 405/415, throttling, CSP, normalización | Recomendadas por riesgo, **no** reclamadas por la rúbrica |
 | **E —Fuera de alcance** | Docker, CI, despliegue, apps móviles, multi-idioma | No hay evidencia; no implementar salvo decisión |
 
@@ -403,16 +465,19 @@ implementar R-UI-01…14:
 
 ### 10.1 Imprescindible (bloquea la entrega del laboratorio)
 
-| # | Tarea | Requisitos | Depende de |
-|---|---|---|---|
-| T-IMP-1 | Implementar `quizctl.exit_code_for` (mapeo de estados → códigos 0–6) | R-API-21…26 | — |
-| T-IMP-2 | Implementar `quizctl.build_question_payload` (`:ok` final, sin validar) | R-API-27…29 | — |
-| T-IMP-3 | Implementar `quiz.permissions.AgentPermission` (4 ramas de la regla + denegar por defecto) | R-API-47…53 | — |
-| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 |
-| T-IMP-5 | **Decidir** el contrato de `question_count` en respuestas de escritura | R-SER-08 | — |
-| T-IMP-6 | **Decidir** el comportamiento de `?exam=` no numérico (ignorar vs 400) | R-VIE-08 | — |
-| T-IMP-7 | **Decidir** si el agente puede modificar exámenes (PUT/PATCH) | R-API-54 | — |
-| T-IMP-8 | Actualizar el README con el estado real y la sección de UI si se aprueba | R-REP-01, R-REP-13 | T-IMP-1…7 |
+> **Estado 2026-10-16: T-IMP-1 a T-IMP-4 están completados** (`cf61a11`, `7992f2a`; suite en verde con
+> 324 pruebas). T-IMP-5 a T-IMP-8 se resuelven o se registran abajo. La columna *Estado* es nueva.
+
+| # | Tarea | Requisitos | Depende de | Estado |
+|---|---|---|---|---|
+| T-IMP-1 | Implementar `quizctl.exit_code_for` (mapeo de estados → códigos 0–6) | R-API-21…26 | — | ✅ Completado (`quizctl.py:48-63`) |
+| T-IMP-2 | Implementar `quizctl.build_question_payload` (`:ok` final, sin validar) | R-API-27…29 | — | ✅ Completado (`quizctl.py:66-91`) |
+| T-IMP-3 | Implementar `quiz.permissions.AgentPermission` (4 ramas de la regla + denegar por defecto) | R-API-47…53 | — | ✅ Completado (`quiz/permissions.py` + tabla en `quiz/services.py:20-25`) |
+| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 | ✅ Completado: `Ran 324 tests ... OK` |
+| T-IMP-5 | **Decidir** el contrato de `question_count` en respuestas de escritura | R-SER-08 | — | 🟡 **Abierto.** No se ha tocado el serializador entregado; sigue faltando la clave en 201/200 |
+| T-IMP-6 | **Decidir** el comportamiento de `?exam=` no numérico (ignorar vs 400) | R-VIE-08 | — | ✅ **Resuelto:** ahora da **400** nombrando el parámetro (`quiz/views.py:12-27`) |
+| T-IMP-7 | **Decidir** si el agente puede modificar exámenes (PUT/PATCH) | R-API-54 | — | ✅ **Resuelto** por ADR-0003: el agente lee, crea y modifica, **nunca borra** |
+| T-IMP-8 | Actualizar el README con el estado real y la sección de UI | R-REP-01, R-REP-13 | T-IMP-1…7 | ✅ Completado (`README.md`: puesta en marcha, variables, tabla de la API, códigos de error, interfaz) |
 
 ### 10.2 Recomendado
 
@@ -425,7 +490,7 @@ implementar R-UI-01…14:
 | T-REC-5 | Documentar que el contrato es público y por qué (romperlo rompe la pasarela) | R-VIE-18, R-REP-08 |
 | T-REC-6 | ADR si se adoptan plantillas/sesiones/UI | R-REP-13, R-UI-T1…T6 |
 | T-REC-7 | `DEBUG`/`SECRET_KEY` con conmutador por entorno | R-REP-03 |
-| T-REC-8 | Tests de UI (`test_ui.py`) si entra en alcance | R-UI-12 |
+| T-REC-8 | Pruebas de UI si entra en alcance | R-UI-12 → **✅ cubierto**: los módulos reales son `test_web.py`, `test_web_review.py`, `test_web_gaps.py`, `test_services.py` (no existe `test_ui.py`, nombre que se usó en la fase de análisis) |
 
 ### 10.3 Opcional
 

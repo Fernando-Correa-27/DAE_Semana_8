@@ -2,13 +2,85 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# No credentials in code: the key comes from the environment. The fallback is a
-# throwaway value that only makes sense on a classroom machine.
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-not-a-secret")
-DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+# Local file that keeps the classroom key between restarts. It is a secret, so it
+# is ignored by git and never printed.
+SECRET_KEY_FILE = BASE_DIR / ".secret_key"
+
+# Development is the default so the lab keeps working with no environment at all.
+# Turn it off with DJANGO_DEBUG=0 (and then the two variables below are mandatory).
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+
+
+def _secret_key_from_file(path):
+    """The stored key, generating and saving one the first time.
+
+    Returns an empty string when the file cannot be read or written, and the
+    caller decides what to do about it.
+    """
+    try:
+        stored = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        stored = ""
+    if stored:
+        return stored
+    generated = get_random_secret_key()
+    try:
+        path.write_text(generated, encoding="utf-8")
+        os.chmod(path, 0o600)  # owner only, on the systems that have such permissions
+    except OSError:
+        return ""
+    return generated
+
+
+def _secret_key():
+    """No credential in the code, ever.
+
+    Resolution order (SUI-01): the environment first, then a random key persisted
+    in ``.secret_key`` so the sessions of the lab survive a restart. With DEBUG off
+    only the environment counts: a key written on disk is not a key of production.
+    """
+    from_environment = os.environ.get("DJANGO_SECRET_KEY", "").strip()
+    if from_environment:
+        return from_environment
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set in the environment when DJANGO_DEBUG is off "
+            "(a key stored in .secret_key is only good for a classroom machine)."
+        )
+    stored = _secret_key_from_file(SECRET_KEY_FILE)
+    # A read-only checkout still runs: the key is then valid until the process ends.
+    return stored or get_random_secret_key()
+
+
+def _allowed_hosts():
+    """Loopback by default while developing, the environment everywhere else (SUI-02)."""
+    from_environment = [
+        host.strip()
+        for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+        if host.strip()
+    ]
+    if from_environment:
+        return from_environment
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must list, comma separated, the hosts allowed to serve "
+            "this site when DJANGO_DEBUG is off."
+        )
+    return ["localhost", "127.0.0.1", "testserver"]
+
+
+SECRET_KEY = _secret_key()
+ALLOWED_HOSTS = _allowed_hosts()
+
+# The interface is never meant to be embedded in another site (SUI-05). The CSP
+# below is the modern half of the same control.
+X_FRAME_OPTIONS = "DENY"
+CONTENT_SECURITY_POLICY = "default-src 'self'; frame-ancestors 'none'"
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -31,6 +103,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "config.middleware.ContentSecurityPolicyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

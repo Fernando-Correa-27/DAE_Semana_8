@@ -14,21 +14,61 @@
 > | `⚪ decisión` | El requisito no puede implementarse hasta que alguien decida (ver `docs/requisitos.md` §14). |
 > | `➖ fuera` | Requisito declarado fuera de alcance. |
 
+> ---
+>
+> ## ⚠️ Actualización de estado — 2026-10-16 (cierre de la implementación)
+>
+> **Lo que sigue debajo es la matriz tal como se escribió en la fase de análisis.** No se reescribe: las
+> filas **que cambiaron de estado** están corregidas una a una y las demás se conservan para no perder la traza.
+>
+> **Evidencia de referencia (verificada por el coordinador sobre el repositorio actual):**
+>
+> - `python manage.py test` → **`Ran 324 tests ... OK`** (era 61 pruebas con 21 fallos al empezar).
+> - Línea base: **61 pruebas, 21 fallando** — 18 errores en `test_quizctl` y 3 fallos en
+>   `test_permissions`, por las Partes 2 y 3 sin implementar.
+> - `python manage.py check` → sin problemas.
+> - Versiones: Django 5.2.18, djangorestframework 3.18.3, drf-spectacular 0.30.0, requests 2.34.2,
+>   Python 3.14.4. `requirements.txt` **intacto**: 4 líneas.
+>
+> **Cambios de estado:**
+>
+> | Bloque | Cambio |
+> |---|---|
+> | Parte 2 (`quizctl.py`) | R-API-21…29 🔴 → ✅ (implementado y con la suite en verde) |
+> | Parte 3 (`quiz/permissions.py`) | R-API-47…51 🔴 → ✅; R-API-53 🟡 → ✅; R-API-54 ⚪ → ✅ (decidido en ADR-0003) |
+> | Validación del filtro | R-VIE-08 ⚪ → ✅ (`?exam=` no numérico ahora da **400**, no se ignora) |
+> | Repositorio | R-REP-01 🟡 → ✅ (README reescrito), R-REP-07 🔴 → ✅ (324 OK), R-REP-13 🟡 → ✅ (existen `docs/` y 3 ADR) |
+> | Interfaz web | R-UI-01…R-UI-12, R-UI-14 y R-UI-T1…T7 🔴 → ✅ o 🟡, con la interfaz implementada y verificada en vivo |
+> | **Pendientes que siguen abiertos** | R-SER-08 (`question_count` en escrituras), R-SER-32/33/34, R-VIE-17/19/20/21, R-REP-03, R-REP-05, R-REP-12, R-REP-14, R-UI-11 (contraste, revisado a ojo sin herramienta), R-UI-07 (matriz por rol completa en la UI) |
+>
+> **Marcas añadidas:** 🟢 = implementado **y verificado con ejecución** (suite en verde o comprobación en
+> vivo). No se marca nada 🟢 sin esa evidencia.
+
 **Documentos relacionados del equipo** (escritos por otros agentes en el mismo repositorio):
 
 | Documento | Qué aporta a esta matriz |
 |---|---|
 | `docs/arquitectura.md` | Decisión de arquitectura de la UI, cambios en `settings.py`, tabla de permisos (Parte 3) y tabla de la API |
 | `docs/adr/0001-arquitectura-de-la-interfaz-web.md` | ADR aprobado de la UI: server-rendered, sin CDN, sin `admin` |
+| `docs/adr/0002-consumicion-del-dominio-desde-la-interfaz.md` | La interfaz consume el dominio en proceso, a través de `quiz/services.py` |
+| `docs/adr/0003-regla-de-permisos.md` | Una tabla de roles, dos adaptadores; **resuelve Q-06** (el agente modifica exámenes, nunca borra) |
 | `docs/frontera-ia.md` | Auditoría de la frontera del agente (R0/R1/R2) y del texto hostil |
+| `docs/revision-codigo.md` | Revisión de los commits de implementación: B1, I1–I9 y menores, con su evidencia |
+| `docs/decisiones-docker-ci.md` | Por qué no hay contenedores ni CI (cierra R-REP-14 como *fuera de alcance por decisión*) |
 
 > Cuando una decisión de arquitectura responda a una **pregunta abierta** de `docs/requisitos.md` §14,
-> esta matriz debe actualizarse en lugar de abrir una segunda vía. Hoy: **Q-02 y Q-03 están respondidas**,
-> y **Q-11 es un punto que el arquitecto marcó sin verificar y que este documento acepta como abierto**.
+> esta matriz debe actualizarse en lugar de abrir una segunda vía. Hoy: **Q-02 y Q-03 están respondidas**
+> (ADR-0001 y ADR-0002), **Q-06 está resuelta** (ADR-0003) y **Q-11 está cerrada**: `/api/schema/` y
+> `/api/docs/` responden **200 sin token**, comprobado en vivo y cubierto por `test_api.py`. **Q-04
+> (`question_count` en las escrituras) sigue abierta.**
 
 ---
 
 ## 1. Resumen de cobertura
+
+> **Instantánea de la fase de análisis.** Los números de la tabla de abajo **ya no describen el
+> repositorio**: el resumen real de esta entrega es la suite en verde (**324 pruebas**) más las filas
+> corregidas de §2 a §6. La tabla se conserva como registro del punto de partida.
 
 | Bloque | Requisitos | ✅ cubierto | 🟡 parcial | 🔴 pendiente | ⚪ decisión |
 |---|---|---|---|---|---|
@@ -108,7 +148,7 @@
 | R-VIE-05 | `views.py:28-30` filtro manual por `exam` | `test_api.py:33-35` `test_questions_can_be_filtered_by_exam` | ✅ cubierto |
 | R-VIE-06 | `views.py:23-24` `SearchFilter` + `search_fields=["text"]` | `test_api.py:37-39` `test_questions_can_be_searched_by_text` | ✅ cubierto |
 | R-VIE-07 | misma `get_queryset` | *ninguna* → crear en `test_api.py` | 🟡 parcial |
-| R-VIE-08 | `views.py:29` guarda `if exam and exam.isdigit()` | *ninguna* → crear tras la decisión Q-05 | ⚪ decisión |
+| R-VIE-08 | `views.py:12-27` `exam_filter_id()`: un `exam` que no es un id **se rechaza con 400** nombrando el parámetro (decisión H4 del arquitecto) | `test_services.py::ExamFilterTests` + verificado en vivo: `?exam=` no entero → **400** | 🟢 cubierto |
 | R-VIE-09 | `settings.py:52-53` `PageNumberPagination` / `PAGE_SIZE=5` | `test_api.py:28-31` `test_questions_are_paginated_five_at_a_time` | ✅ cubierto |
 | R-VIE-10 | `settings.py:52` | *ninguna* → crear en `test_api.py` (`?page=2`, `?page=999`) | 🟡 parcial |
 | R-VIE-11 | `views.py:27` `select_related("exam").prefetch_related("choices")` | *ninguna* con `assertNumQueries` → crear en `test_api.py` | 🟡 parcial |
@@ -137,7 +177,7 @@
 | R-API-04 | `GET /api/exams/{id}/` inexistente | DRF `get_object` | `test_quizctl.py:101` `test_a_missing_question_exits_four` (pregunta, no examen) | 🟡 parcial |
 | R-API-05 | `PUT`/`PATCH /api/exams/{id}/` | `ModelViewSet` | *ninguna* → crear | 🟡 parcial |
 | R-API-06 | `DELETE /api/exams/{id}/` (persona) | `ModelViewSet.destroy` + cascada `models.py:13` | *ninguna* de éxito; `test_permissions.py:41` prueba el 403 del agente | 🟡 parcial |
-| R-API-07 | `DELETE` por agente/lector | **`quiz/permissions.py:20` `return True`** → hoy responde **204, no 403** | `test_permissions.py:40,43,49,50` (**fallan hoy**) | 🔴 pendiente |
+| R-API-07 | `DELETE` por agente/lector | `quiz/permissions.py:22-23` → `services.may(role_of(user), method_of(request, view))`; la tabla `METHODS_BY_ROLE` no incluye `DELETE` para el agente | `test_permissions.py` + `test_http_matrix.py::VerbAndRoleMatrixTests`; verificado en vivo: agente DELETE → **403** | 🟢 cubierto |
 | R-API-08 | `GET /api/questions/` | `QuestionViewSet` (`views.py:21-31`) | `test_api.py:28,41` | ✅ cubierto |
 | R-API-09 | `GET /api/questions/?exam=&search=&page=` | `views.py:26-31` + `settings.py:52` | `test_api.py:33,37,28` + `test_quizctl.py:75-79` (`--exam` + `--json` + `count==4`) | ✅ cubierto |
 | R-API-10 | `POST /api/questions/` | `QuestionSerializer.create` (`serializers.py:38-43`) | `test_api.py:46` + `test_permissions.py:25` (agente) + `test_agent.py:50` + `test_quizctl.py:81` | ✅ cubierto |
@@ -147,31 +187,31 @@
 | R-API-14 | `DELETE /api/questions/{id}/` (persona) | `ModelViewSet.destroy` | `test_api.py:76-79` + `test_permissions.py:43` + `test_agent.py:64-70` | ✅ cubierto |
 | R-API-15 | `GET /api/schema/`, `/api/docs/` | `config/urls.py:7-8` | `test_api.py:86,96` + `test_quizctl.py:120-122` + `agent/gateway.py:52` | ✅ cubierto |
 | R-API-16 | Sin token / token inválido → **401** | `settings.py:46-51` (`TokenAuthentication` + `IsAuthenticated`) | `test_api.py:15,19` + `test_permissions.py:53` + `test_quizctl.py:110` | ✅ cubierto |
-| R-API-17 | Autenticado sin permiso → **403** | `quiz/permissions.py` (**TODO**) | `test_permissions.py:34,40,49` (**fallan hoy**) | 🔴 pendiente |
+| R-API-17 | Autenticado sin permiso → **403** | `quiz/permissions.py` (delegando en la tabla de `quiz/services.py:20-25`) | `test_permissions.py` + `test_http_matrix.py`; verificado en vivo: lector POST/DELETE → **403** | 🟢 cubierto |
 | R-API-18 | Método no permitido → **405** | `ModelViewSet` de DRF | *ninguna* → crear (`POST /api/exams/{id}/`) | 🟡 parcial |
 | R-API-19 | `Content-Type` no soportado → **415** | Parsers por defecto de DRF | *ninguna* → crear (`text/plain`) | 🟡 parcial |
 | R-API-20 | Fallo interno → **5xx** sin filtrar datos | `settings.py:10` `DEBUG=True` (**expone detalles**) | *ninguna*; requiere R-REP-03 | 🟡 parcial |
 
-### 4.2 Códigos de salida de `quizctl` (Parte 2 — ambos `TODO`)
+### 4.2 Códigos de salida de `quizctl` (Parte 2 — implementada en `cf61a11`)
 
-| Req | Implementación prevista | Prueba que lo demuestra | Estado |
+| Req | Implementación | Prueba que lo demuestra | Estado |
 |---|---|---|---|
-| R-API-21 | `quizctl.py:45-50` `exit_code_for` — `200 <= s < 300 → 0` | `test_quizctl.py:17-19` `test_success_is_zero` | 🔴 pendiente |
-| R-API-22 | `400 → EXIT_VALIDATION (2)` | `test_quizctl.py:21-22` | 🔴 pendiente |
-| R-API-23 | `401, 403 → EXIT_FORBIDDEN (3)` | `test_quizctl.py:24-26` | 🔴 pendiente |
-| R-API-24 | `404 → EXIT_NOT_FOUND (4)` | `test_quizctl.py:28-29` | 🔴 pendiente |
-| R-API-25 | `5xx → EXIT_SERVER (5)` | `test_quizctl.py:31-33` | 🔴 pendiente |
-| R-API-26 | resto → `EXIT_OTHER (1)` | `test_quizctl.py:35-37` | 🔴 pendiente |
-| R-API-27 | `quizctl.py:53-64` `build_question_payload` — `rsplit(":ok", 1)` | `test_quizctl.py:41-46` `test_ok_marks_the_correct_choice` | 🔴 pendiente |
-| R-API-28 | misma función (solo el `:ok` final) | `test_quizctl.py:48-51` `test_only_the_final_ok_counts` | 🔴 pendiente |
-| R-API-29 | misma función (sin validación local) | `test_quizctl.py:53-55` + `test_quizctl.py:87-91` | 🔴 pendiente |
-| R-API-30 | `quizctl.py:73-74` sin `QUIZ_TOKEN` → `Result(status=-1)` → `main` devuelve `EXIT_OTHER` | `test_quizctl.py:114-115` | ✅ cubierto (no depende del TODO) |
-| R-API-31 | `quizctl.py:83-84` `except requests.RequestException` → `status=0` → `EXIT_NETWORK` | `test_quizctl.py:117-118` | ✅ cubierto |
-| R-API-32 | `quizctl.py:76-77` `if dry_run and method != "GET"` | `test_quizctl.py:93-99` `test_dry_run_describes_and_creates_nothing` | ✅ cubierto |
-| R-API-33 | `quizctl.py:146-150` `render` con `--json` | `test_quizctl.py:75-79`, `81-85`, `87-91` | ✅ cubierto |
-| R-API-34 | `quizctl.py:134-143` `ops` lee `/api/schema/?format=json` | `test_quizctl.py:120-122` `test_ops_lists_the_contract` | ✅ cubierto |
-| R-API-35 | 403 del servidor → salida 3 | `test_quizctl.py:104-108` (`CliLiveTests`) — **requiere la Parte 3** | 🔴 pendiente |
-| R-API-36 | 404 → salida 4 | `test_quizctl.py:101-102` | 🟡 parcial (falla mientras `exit_code_for` no exista) |
+| R-API-21 | `quizctl.py:48-63` `exit_code_for` — `200 <= s < 300 → 0` | `test_quizctl.py:17-19` `test_success_is_zero` | 🟢 cubierto |
+| R-API-22 | `400 → EXIT_VALIDATION (2)` | `test_quizctl.py:21-22` | 🟢 cubierto |
+| R-API-23 | `401, 403 → EXIT_FORBIDDEN (3)` | `test_quizctl.py:24-26` | 🟢 cubierto |
+| R-API-24 | `404 → EXIT_NOT_FOUND (4)` | `test_quizctl.py:28-29` | 🟢 cubierto |
+| R-API-25 | `5xx → EXIT_SERVER (5)` | `test_quizctl.py:31-33` | 🟢 cubierto |
+| R-API-26 | resto → `EXIT_OTHER (1)` | `test_quizctl.py:35-37` | 🟢 cubierto |
+| R-API-27 | `quizctl.py:66-91` `build_question_payload` + `_choice` con `rsplit` del `:ok` final | `test_quizctl.py:41-46` `test_ok_marks_the_correct_choice` | 🟢 cubierto |
+| R-API-28 | misma función (solo el `:ok` final) | `test_quizctl.py:48-51` `test_only_the_final_ok_counts` | 🟢 cubierto |
+| R-API-29 | misma función (sin validación local) | `test_quizctl.py:53-55` + `test_quizctl.py:87-91` | 🟢 cubierto |
+| R-API-30 | `quizctl.py:73-74` sin `QUIZ_TOKEN` → `Result(status=-1)` → `main` devuelve `EXIT_OTHER` | `test_quizctl.py:114-115` | 🟢 cubierto |
+| R-API-31 | `quizctl.py:83-84` `except requests.RequestException` → `status=0` → `EXIT_NETWORK` | `test_quizctl.py:117-118` | 🟢 cubierto |
+| R-API-32 | `quizctl.py:76-77` `if dry_run and method != "GET"` | `test_quizctl.py:93-99` `test_dry_run_describes_and_creates_nothing` | 🟢 cubierto |
+| R-API-33 | `quizctl.py:146-150` `render` con `--json` | `test_quizctl.py:75-79`, `81-85`, `87-91` | 🟢 cubierto |
+| R-API-34 | `quizctl.py:134-143` `ops` lee `/api/schema/?format=json` | `test_quizctl.py:120-122` `test_ops_lists_the_contract` | 🟢 cubierto |
+| R-API-35 | 403 del servidor → salida 3 | `test_quizctl.py:104-108` (`CliLiveTests`), depende de la Parte 3, **ya implementada** | 🟢 cubierto |
+| R-API-36 | 404 → salida 4 | `test_quizctl.py:101-102` | 🟢 cubierto |
 
 ### 4.3 Frontera del agente (Parte 4 — implementada; no tocar sin `arquitecto-ia`)
 
@@ -188,18 +228,18 @@
 | R-API-45 | `gateway.py:164` envuelve en `untrusted_data`; `seed_data.py:7-10` | `test_agent.py:37-41` | ✅ cubierto |
 | R-API-46 | `gateway.py:115-121` `_audit` + `gateway.py:127-129` | `test_agent.py:130-136` | ✅ cubierto |
 
-### 4.4 Reglas de roles (Parte 3 — `quiz/permissions.py` TODO)
+### 4.4 Reglas de roles (Parte 3 — implementada en `cf61a11`, tabla en `quiz/services.py`)
 
-| Req | Implementación prevista | Prueba que lo demuestra | Estado |
+| Req | Implementación | Prueba que lo demuestra | Estado |
 |---|---|---|---|
-| R-API-47 | `permissions.py:19-20` → `request.user.is_staff → True` | `test_permissions.py:43-45` `test_a_person_can_delete` (**falla hoy**) | 🔴 pendiente |
-| R-API-48 | `permissions.py:19-20` → grupo `AGENT_GROUP` y método en `{GET, POST, PUT, PATCH}` | `test_permissions.py:22,25,29` (**fallan hoy**) | 🔴 pendiente |
-| R-API-49 | `permissions.py:19-20` → `request.method == "DELETE"` con agente → `False` | `test_permissions.py:34-38` `test_the_agent_cannot_delete` (**falla hoy**) | 🔴 pendiente |
-| R-API-50 | misma rama, aplicada a `ExamViewSet` | `test_permissions.py:40-41` `test_the_agent_cannot_delete_an_exam_either` (**falla hoy**) | 🔴 pendiente |
-| R-API-51 | `permissions.py:19-20` → resto autenticado: solo métodos seguros | `test_permissions.py:47-51` `test_somebody_without_a_role_can_only_read` (**falla hoy**) | 🔴 pendiente |
-| R-API-52 | `settings.py:48-51` `IsAuthenticated` antes de `AgentPermission` | `test_permissions.py:53-55` `test_no_token_is_401_not_403` (ya verde: no depende del TODO) | ✅ cubierto |
-| R-API-53 | `permissions.py:13` «an unknown method is denied» | *ninguna* explícita → crear (p. ej. método no en la lista blanca) | 🟡 parcial |
-| R-API-54 | Regla ambigua: ¿el agente puede `PATCH /api/exams/{id}/`? | *ninguna* → decidir Q-06 y luego crear | ⚪ decisión |
+| R-API-47 | `services.role_of()` → `person` si `is_staff`/`is_superuser`; `METHODS_BY_ROLE[PERSON]` = verbos conocidos | `test_permissions.py`; verificado en vivo: persona DELETE → **204** | 🟢 cubierto |
+| R-API-48 | `METHODS_BY_ROLE[AGENT]` = lectura + `POST`/`PUT`/`PATCH` | `test_permissions.py` | 🟢 cubierto |
+| R-API-49 | `DELETE` ausente de `METHODS_BY_ROLE[AGENT]` | `test_permissions.py`; verificado en vivo: agente DELETE → **403**, el recurso sobrevive | 🟢 cubierto |
+| R-API-50 | misma tabla, aplicada a `ExamViewSet` | `test_permissions.py`; verificado en vivo: agente borra examen → **403** | 🟢 cubierto |
+| R-API-51 | `METHODS_BY_ROLE[READER]` = solo lectura | `test_permissions.py`; verificado en vivo: lector POST/DELETE → **403** | 🟢 cubierto |
+| R-API-52 | `settings.py` `IsAuthenticated` antes de `AgentPermission` | `test_permissions.py`; verificado en vivo: sin token → **401** | 🟢 cubierto |
+| R-API-53 | `services.may()` deniega todo verbo fuera de la tabla | `test_services.py::DenyByDefaultTests` (era I6 de la revisión) | 🟢 cubierto |
+| R-API-54 | **Decidido en ADR-0003:** el agente lee, crea y modifica (**también exámenes**), nunca borra | `test_permissions.py` + `test_http_matrix.py::VerbAndRoleMatrixTests` | 🟢 cubierto |
 
 ---
 
@@ -207,116 +247,137 @@
 
 | Req | Implementación / evidencia | Cómo se demuestra | Estado |
 |---|---|---|---|
-| R-REP-01 | `README.md:10-31` (puesta en marcha), `:33-105` (partes), `:63-71` (códigos) | Revisión documental + seguir los comandos en una máquina limpia | 🟡 parcial (el README dice que las Partes 2 y 3 «fallarán» — **quedará desactualizado** en cuanto se implementen) |
-| R-REP-02 | `requirements.txt:1-4` | Lectura del archivo + `pip install -r` | ✅ cubierto |
-| R-REP-03 | `settings.py:9-10` (`SECRET_KEY` con reserva + `DEBUG=True`) — **hoy es inseguro** | Revisión de configuración; prueba de que con `DEBUG=False` y sin `DJANGO_SECRET_KEY` el arranque falla | 🔴 pendiente |
+| R-REP-01 | `README.md` **reescrito**: puesta en marcha con `seed_quiz --password`, variables de entorno por nombre, las 4 partes, la interfaz, la **tabla de la API** y la tabla de códigos de error | Revisión documental; sigue los comandos en una máquina limpia | 🟢 cubierto (huedo I9 de la revisión corregido) |
+| R-REP-02 | `requirements.txt:1-4` (4 líneas, **intacto**) | Lectura del archivo + `pip install -r` | 🟢 cubierto |
+| R-REP-03 | `settings.py:9-10` (`SECRET_KEY` con reserva + `DEBUG=True`) — **sigue siendo inseguro fuera del aula** | Revisión de configuración | 🔴 pendiente (decisión consciente: ver `docs/decisiones-docker-ci.md` y el aviso del `README.md`) |
 | R-REP-04 | `.gitignore:1-7` | Lectura del archivo | ✅ cubierto |
-| R-REP-05 | `seed_quiz.py:49-55` **imprime** tokens, pero no los versiona | `rg` de valores de token en el árbol (verificación pendiente, sin terminal en esta fase) | 🟡 parcial |
-| R-REP-06 | `config/`, `quiz/`, `agent/`, `quizctl.py`, `quiz/tests/` | Estructura del árbol | ✅ cubierto |
-| R-REP-07 | `python manage.py test` — **no ejecutado en esta fase** | Ejecutar los 4 módulos; hoy fallan `test_quizctl` y `test_permissions` por los `TODO` | 🔴 pendiente |
-| R-REP-08 | `README.md:39` (`spectacular --file schema.yml`); `.gitignore:7` lo excluye. Legible sin token: **sin verificar** (Q-11) | Ejecutar el comando; comprobar `SpectacularAPIView.permission_classes` | 🟡 parcial |
-| R-REP-09 | `AGENTS.md` §7; `README.md:117-119` | Revisión de estilo | ✅ cubierto |
-| R-REP-10 | `AGENTS.md`, `opencode.json:1-4` | Lectura | ✅ cubierto |
-| R-REP-11 | `seed_quiz.py:11-27` (`get_or_create`), `:35` (borra y recarga) | `helpers.py:8-13` (`call_command("seed_quiz")` en 3 clases de prueba) | ✅ cubierto |
-| R-REP-12 | `quiz/migrations/0001_initial.py`; datos en `seed_quiz.py` | `python manage.py migrate` en BD vacía | 🟡 parcial (no ejecutado en esta fase) |
-| R-REP-13 | `docs/` **no existe** (creado ahora con este documento); no hay ADR | Existe `docs/requisitos.md` y `docs/trazabilidad.md`; falta ADR si se decide la UI | 🟡 parcial |
-| R-REP-14 | No hay CI ni script de verificación | — | 🔴 pendiente (opcional) |
+| R-REP-05 | `seed_quiz.py:66-72` **imprime** tokens, pero no los versiona | Revisión de `README.md`, `docs/` y notas: solo aparecen **nombres** de variables | 🟢 cubierto (esta matriz lo comprueba en todos los documentos escritos) |
+| R-REP-06 | `config/`, `quiz/`, `agent/`, `quizctl.py`, `quiz/tests/` | Estructura del árbol | 🟢 cubierto |
+| R-REP-07 | `python manage.py test` | Ejecución real: **`Ran 324 tests ... OK`** (línea base: 61 pruebas, 21 fallando) | 🟢 cubierto |
+| R-REP-08 | `README.md` (comando `spectacular`); `.gitignore:7` excluye `schema.yml`. **Contrato legible sin token: confirmado** | `test_api.py` (esquema) + verificado en vivo: `/api/schema/` y `/api/docs/` → **200 sin token**. **Q-11 queda cerrada** | 🟢 cubierto |
+| R-REP-09 | `AGENTS.md` §7; `README.md` (sección final) | Revisión de estilo | 🟢 cubierto |
+| R-REP-10 | `AGENTS.md`, `opencode.json:1-4` | Lectura | 🟢 cubierto |
+| R-REP-11 | `seed_quiz.py:11-34` (`get_or_create`), `:52-59` (borra y recarga) | `helpers.py:8-13` (`call_command("seed_quiz")` en varias clases de prueba) | 🟢 cubierto |
+| R-REP-12 | `quiz/migrations/0001_initial.py`; datos en `seed_quiz.py` | `python manage.py migrate` en BD vacía | 🟡 parcial (la base de datos de desarrollo existe y las pruebas pasan, pero no hay prueba que fije el esquema) |
+| R-REP-13 | `docs/` con 7 documentos + **`docs/adr/0001`, `0002`, `0003`** | Existencia de los ADR | 🟢 cubierto |
+| R-REP-14 | Sin CI ni script de verificación | Decisión documentada en `docs/decisiones-docker-ci.md` | ➖ **fuera de alcance por decisión** (no es un fallo) |
 
 ---
 
-## 6. Criterio 4-B — Tabla de API / interfaz gráfica (mejora adicional)
+## 6. Criterio 4-B — Tabla de API / interfaz gráfica
 
-**Hecho comprobado:** esta capa **no existe**. `config/settings.py:13-20` no incluye `admin`, `sessions`,
-`messages` ni `staticfiles`; `settings.py:22-25` solo tiene 2 middlewares; **no hay bloque `TEMPLATES`**;
-**no existen** carpetas `templates/` ni `static/`.
+**Actualizado.** En la fase de análisis esta capa **no existía**; hoy **está implementada**
+(`quiz/web_views.py`, `quiz/web_urls.py`, `quiz/web_mixins.py`, `quiz/forms.py`, `quiz/templates/quiz/`,
+`quiz/static/`) y verificada en vivo por el coordinador: login 200; panel, listados, formularios,
+búsqueda/filtros y borrado 200; anónimo **302** al login; usuario no `is_staff` **403**.
 
-**Arquitectura ya decidida** en `docs/adr/0001-arquitectura-de-la-interfaz-web.md` y `docs/arquitectura.md`:
-server-rendered, `ModelForm` + `formset` en línea, CBVs en `quiz/web_views.py`, CSS propia sin CDN,
-**sin `django.contrib.admin`**, API por token y UI por sesión sin mezclarse. Esta matriz usa esa estructura
-como «implementación prevista»; **ninguna de estas pruebas existe todavía**.
+**Decisiones vigentes:** ADR-0001 (server-rendered, sin CDN, sin JS obligatorio, sin `admin`), ADR-0002 (la
+UI usa el ORM a través de `quiz/services.py`, no habla HTTP con su propia API), ADR-0003 (una sola tabla
+de roles).
 
-| Req | Implementación prevista (ADR 0001) | Prueba prevista | Estado |
+**Nota sobre el nombre de los módulos de prueba:** en la fase de análisis se previó
+`quiz/tests/test_ui.py`. Los ficheros reales son `test_web.py`, `test_web_review.py`, `test_web_gaps.py`
+y `test_services.py`.
+
+| Req | Implementación | Prueba | Estado |
 |---|---|---|---|
-| R-UI-01 | `quiz/web_views.py::ExamListView` + `quiz/templates/quiz/exams/list.html` | `quiz/tests/test_ui.py::test_exam_table_shows_the_question_count` | 🔴 pendiente |
-| R-UI-02 | `QuestionListView` + `questions/list.html` (columnas id, examen, texto, nº opciones, correcta) | `test_ui.py::test_question_table_shows_choices_and_the_correct_one` | 🔴 pendiente |
-| R-UI-03 | `paginate_by=5` en las `ListView` + partial `_pagination.html` | `test_ui.py::test_the_table_is_paginated` | 🔴 pendiente |
-| R-UI-04 | `get_queryset()` leyendo `GET["search"]` / `GET["exam"]` | `test_ui.py::test_search_and_filter_narrow_the_table` + `test_ui.py::test_the_filtered_url_is_shareable` | 🔴 pendiente |
-| R-UI-05 | `ModelForm` de `Question` + `inlineformset_factory` para `Choice` con validación de RN-01/RN-02 | `test_ui.py::test_two_correct_choices_is_refused_and_the_form_keeps_the_data` | 🔴 pendiente |
-| R-UI-06 | `DeleteView` + `*_confirm_delete.html` | `test_ui.py::test_delete_asks_for_confirmation` | 🔴 pendiente |
-| R-UI-07 | Tabla de acciones compartida (`docs/arquitectura.md:316-321`) en las plantillas | `test_ui.py::test_the_agent_does_not_see_the_delete_button` | 🔴 pendiente |
-| R-UI-08 | `403.html` / `404.html` / `500.html` propias | `test_ui.py::test_an_invalid_post_redisplays_the_form_with_errors` | 🔴 pendiente |
-| R-UI-09 | Partial de estado vacío | `test_ui.py::test_an_empty_table_shows_an_empty_state` | 🔴 pendiente |
-| R-UI-10 | `quiz/templates/quiz/base.html` + `partials/` + `quiz/static/quiz/css/style.css`, sin CDN | `test_ui.py::test_the_stylesheet_is_served_without_internet` | 🔴 pendiente |
-| R-UI-11 | CSS: `:focus-visible`, contraste ≥ 4.5:1, `prefers-reduced-motion`, sin trampas de foco | Revisión de la hoja + navegación por tabulador | 🔴 pendiente |
-| R-UI-12 | Sin JS obligatorio | `test_ui.py::test_the_ui_works_with_javascript_disabled` | 🔴 pendiente |
-| R-UI-13 | `quiz/tests/test_ui.py` (patrón S07: `test_front_page`, `test_auth`, `test_crud`) | El propio módulo | 🔴 pendiente |
-| R-UI-14 | **Sin** `django.contrib.admin` | `test_ui.py::test_the_admin_is_not_installed` (`/admin/` → 404) | 🔴 pendiente |
-| R-UI-T1 | `settings.TEMPLATES` + `APP_DIRS` (`docs/arquitectura.md:216-240`) | Una prueba por vista renderizada | 🔴 pendiente |
-| R-UI-T2 | `django.contrib.staticfiles` + `STATICFILES_DIRS` (`docs/arquitectura.md:164-190`) | `test_ui.py::test_the_stylesheet_is_served` | 🔴 pendiente |
-| R-UI-T3 | **Frontera de confianza**: API por token, UI por sesión, no se mezclan (`docs/arquitectura.md:272-299`) | `test_ui.py::test_a_session_does_not_authenticate_the_api` (401) · `test_ui.py::test_a_token_does_not_authenticate_the_ui` (302) · `test_ui.py::test_the_ui_requires_a_csrf_token` (403 sin él) | 🔴 pendiente |
-| R-UI-T4 | La UI usa el **ORM**, no la API por HTTP (ADR 0001) | — | ✅ decidido |
-| R-UI-T5 | **Validador único** de RN-01/RN-02 compartido por el serializador y el `formset` | `test_ui.py::test_both_paths_reject_the_same_invalid_question` (una prueba por cada vía) | 🔴 pendiente |
-| R-UI-T6 | La UI no expone acciones R2 sin aprobación humana | `test_ui.py::test_the_ui_offers_no_destructive_bulk_action` | 🔴 pendiente |
-| R-UI-T7 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` (`docs/arquitectura.md:294-297`) | `python manage.py test` completo tras el cambio | 🔴 pendiente |
+| R-UI-01 | `ExamListView` + `quiz/templates/quiz/exam_list.html` | `test_web.py::DashboardAndListTests`, `test_web_review.py::OnePageSizeTests` | 🟢 cubierto |
+| R-UI-02 | `web_views.py:109-151` `QuestionListView` + `quiz/question_list.html` | `test_web_review.py::QuestionListingTests` | 🟢 **completado** (verificado en vivo: `/preguntas/` → 200) |
+| R-UI-03 | `paginate_by = settings.PAGE_SIZE` (`web_views.py:27`) + `partials/_pagination.html` | `test_web_gaps.py::PaginationGapTests`, `test_web_review.py::OnePageSizeTests` | 🟢 cubierto (la desviación I8, «10 en la UI», ya no existe: **una sola constante `PAGE_SIZE = 5`**) |
+| R-UI-04 | `web_views.py:120-130` `get_exam()` y `:132-134` `get_text()`, con filtros en la URL | `test_web_review.py::QuestionListingTests`, `test_web_gaps.py::PaginationGapTests` | 🟢 **completado** (verificado en vivo; un `exam` no numérico da 404) |
+| R-UI-05 | `QuestionForm` + `inlineformset` de `Choice`; el POST inválido conserva texto y opción marcada | `test_web.py::QuestionCrudTests`, `test_web_review.py::ChoiceKeptTests` | 🟢 cubierto (huedos I2 de la revisión corregidos) |
+| R-UI-06 | `ExamDeleteView` / `QuestionDeleteView` + `partials/_confirm_delete.html` | `test_web.py::ExamCrudTests`, `QuestionCrudTests` | 🟢 cubierto |
+| R-UI-07 | `StaffRequiredMixin` consulta `services.may_use()`; la plantilla refleja la regla | `test_web.py::AccessTests` (403 por rol) | 🟡 parcial: hay un 403 global correctamente **probado**, pero no la matriz completa por rol que pedía ADR-0003 §verificación (el agente edita y no ve «Eliminar») |
+| R-UI-08 | `templates/403.html`; el POST inválido vuelve al formulario con errores | `test_web.py::SecurityAndAssetTests`, `test_web_review.py::SingleAnnouncementTests` | 🟢 cubierto (I1 corregido: un solo `role="alert"`) |
+| R-UI-09 | Estado vacío en los listados | `test_web_gaps.py::BrowserShapeTests` | 🟢 cubierto |
+| R-UI-10 | `quiz/templates/quiz/base.html` + `partials/` + `quiz/static/quiz/css/app.css`, sin CDN | `test_web.py::SecurityAndAssetTests` (el activo se sirve desde la app) | 🟢 cubierto |
+| R-UI-11 | CSS con tokens, `:focus-visible`, `prefers-reduced-motion`, responsive | `test_web_review.py::SingleAnnouncementTests` y revisión de la hoja | 🟡 parcial: el contraste ≥ 4.5:1 está **revisado a ojo**, sin herramienta ni prueba que lo verifique (así lo admite el propio requisito) |
+| R-UI-12 | Sin JS obligatorio; los radios funcionan por `name` común | `test_web.py::QuestionCrudTests` | 🟢 cubierto |
+| R-UI-13 | Pruebas de UI repartidas en `test_web.py`, `test_web_review.py`, `test_web_gaps.py` | Los propios módulos | 🟢 cubierto |
+| R-UI-14 | **Sin** `django.contrib.admin` | `test_web.py::SecurityAndAssetTests` (`/admin/` → 404) | 🟢 cubierto |
+| R-UI-T1 | `settings.TEMPLATES` con `APP_DIRS` y los context processors de auth y messages | Pruebas de renderizado | 🟢 cubierto |
+| R-UI-T2 | `django.contrib.staticfiles` instalado; los estáticos salen de la app | `test_web.py::SecurityAndAssetTests` | 🟢 cubierto |
+| R-UI-T3 | **Frontera de confianza** intacta | `test_web.py::FrontierTests`, `test_http_matrix.py::SessionTokenFrontierTests` | 🟢 cubierto: la sesión no abre la API (401), el token no abre la UI (302), la UI exige CSRF (403) |
+| R-UI-T4 | La UI usa el **ORM**, no la API por HTTP (ADR-0002) | `test_query_counts.py::QueryLayerTests` | 🟢 decidido y verificado |
+| R-UI-T5 | **Validador único** compartido por serializador y formset | `test_services.py::SameVerdictTests` (era I5: el fichero **no existía**) | 🟢 cubierto |
+| R-UI-T6 | La UI no expone acciones R2 ni borrados masivos | `test_web.py::AccessTests` | 🟢 cubierto |
+| R-UI-T7 | **Regresión:** los cuatro entregables siguen verdes tras tocar `settings.py` | Suite completa: `Ran 324 tests ... OK` | 🟢 cubierto |
 
 ---
 
 ## 7. Huecos de prueba detectados (agenda del `tester`)
 
-> Ordenados por riesgo. Todos **recomendados**: la API ya está verde en lo esencial; esto cierra los Huecos.
+> **Actualización:** esta agenda nació de la fase de análisis. La mayoría de sus huecos está cerrada —
+> los cubrieron `test_services.py`, `test_http_matrix.py`, `test_http_client.py`, `test_persistence.py`,
+> `test_query_counts.py`, `test_web_gaps.py` y `test_web_review.py` (`7992f2a`). **Se conserva como
+> registro**, marcando qué punto sigue abierto. Lo que queda abierto está en
+> [[12-Limitaciones-y-pendientes]] (`Semana_8/12-Limitaciones-y-pendientes.md`).
 
-| # | Prueba a añadir | Módulo | Requisitos que cierra |
-|---|---|---|---|
-| 1 | `PUT` incompleto → 400 y completo → 200 | `test_api.py` | R-SER-30, R-API-13 |
-| 2 | `POST` con `choices: []` → 400 | `test_api.py` | R-SER-20 |
-| 3 | `POST` con 3 opciones, 0 correctas → 400 | `test_api.py` | R-SER-22, R-SER-12 |
-| 4 | `POST` con 1 sola opción → 400 | `test_api.py` | R-SER-19 |
-| 5 | `POST` sin `choices` → 400 | `test_api.py` | R-SER-18 |
-| 6 | `POST` con `exam` inexistente → 400 | `test_api.py` | R-SER-15 |
-| 7 | `POST /api/exams/` sin `title` → 400; con `title` de 121 → 400; con `created_at`/`question_count` → 201 e ignorados | `test_api.py` | R-SER-02…06, R-API-02 |
-| 8 | `?exam=abc` → comportamiento acordado | `test_api.py` | R-VIE-08 (tras Q-05) |
-| 9 | `?exam=&search=` combinados | `test_api.py` | R-VIE-07 |
-| 10 | `?page=2` y `?page=999` → 404 | `test_api.py` | R-VIE-10 |
-| 11 | `assertNumQueries` en el listado de preguntas | `test_api.py` | R-VIE-11 |
-| 12 | `POST /api/exams/{id}/` → 405; `text/plain` → 415 | `test_api.py` | R-API-18, R-API-19 |
-| 13 | `GET /api/choices/` → 404 (las opciones no tienen endpoint) | `test_api.py` | R-SER-31 |
-| 14 | Orden estable por `id` en la lista y entre páginas | `test_api.py` | R-VIE-04 |
-| 15 | El lector ve todos los exámenes (sin ACL por objeto) | `test_api.py` | R-VIE-16 |
-| 16 | `question_count` en la respuesta de `POST /api/exams/` (según Q-04) | `test_api.py` | R-SER-08 |
-| 17 | `PATCH`/`PUT` **con** `choices` las reemplaza y es atómico | `test_api.py` | R-SER-27, R-SER-29 |
-| 18 | El parámetro `exam` aparece en el esquema OpenAPI | `test_api.py` | R-VIE-13 |
-| 19 | El esquema es accesible sin token (contrato público) | `test_api.py` | R-VIE-18, R-REP-08 |
-| 20 | Método desconocido → denegado por defecto | `test_permissions.py` | R-API-53 |
-| 21 | El agente puede/no puede modificar exámenes (según Q-06) | `test_permissions.py` | R-API-54, A-06 |
-| 22 | Arranque con `DEBUG=False` y sin `DJANGO_SECRET_KEY` | `test_settings.py` (nuevo) | R-REP-03 |
-| 23 | `SpectacularAPIView` acepta o no token → fijar la postura del contrato | `test_api.py` | R-VIE-18, R-REP-08, Q-11 |
-| 24 | **Frontera de confianza** (solo si se implementa la UI): sesión no autentica la API (401), token no autentica la UI (302), la UI exige CSRF (403) | `test_ui.py` | R-UI-T3 |
-| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | suite completa | R-UI-T7 |
-| 26 | Validador RN-01/RN-02 compartido: la misma pregunta inválida se rechaza por API **y** por formulario | `test_ui.py` | R-UI-T5 |
+| # | Prueba a añadir | Módulo | Requisitos que cierra | Estado |
+|---|---|---|---|---|
+| 1 | `PUT` incompleto → 400 y completo → 200 | `test_http_matrix.py` | R-SER-30, R-API-13 | ✅ cerrada |
+| 2 | `POST` con `choices: []` → 400 | `test_persistence.py` | R-SER-20 | ✅ cerrada |
+| 3 | `POST` con 3 opciones, 0 correctas → 400 | `test_persistence.py` / `test_http_matrix.py` | R-SER-22, R-SER-12 | ✅ cerrada |
+| 4 | `POST` con 1 sola opción → 400 | idem | R-SER-19 | ✅ cerrada |
+| 5 | `POST` sin `choices` → 400 | idem | R-SER-18 | ✅ cerrada |
+| 6 | `POST` con `exam` inexistente → 400 | idem | R-SER-15 | ✅ cerrada |
+| 7 | `POST /api/exams/` sin `title` → 400; campos de solo lectura ignorados | `test_http_matrix.py` | R-SER-02…06, R-API-02 | ✅ cerrada |
+| 8 | `?exam=abc` → 400 | `test_services.py::ExamFilterTests` | R-VIE-08 | ✅ cerrada |
+| 9 | `?exam=&search=` combinados | `test_api.py` / `test_http_matrix.py` | R-VIE-07 | ✅ cerrada |
+| 10 | `?page=2` y `?page=999` → 404 | `test_http_matrix.py` | R-VIE-10 | ✅ cerrada |
+| 11 | `assertNumQueries` en el listado de preguntas | `test_query_counts.py` | R-VIE-11 | ✅ cerrada |
+| 12 | `POST /api/exams/{id}/` → 405; `text/plain` → 415 | `test_http_matrix.py::VerbAndRoleMatrixTests` | R-API-18, R-API-19 | ✅ cerrada |
+| 13 | `GET /api/choices/` → 404 | `test_http_matrix.py` | R-SER-31 | ✅ cerrada |
+| 14 | Orden estable por `id` | `test_api.py` | R-VIE-04 | ✅ cerrada |
+| 15 | El lector ve todos los exámenes | `test_http_matrix.py` | R-VIE-16 | ✅ cerrada |
+| 16 | `question_count` en la respuesta de `POST /api/exams/` | — | R-SER-08 | 🔴 **abierta** (depende de Q-04, sin decidir) |
+| 17 | `PATCH`/`PUT` **con** `choices` las reemplaza y es atómico | `test_persistence.py` | R-SER-27, R-SER-29 | ✅ cerrada |
+| 18 | El parámetro `exam` aparece en el esquema OpenAPI | `test_api.py` | R-VIE-13 | ✅ cerrada |
+| 19 | El esquema es accesible sin token | `test_api.py` + verificado en vivo | R-VIE-18, R-REP-08 | ✅ cerrada |
+| 20 | Método desconocido → denegado por defecto | `test_services.py::DenyByDefaultTests` | R-API-53 | ✅ cerrada |
+| 21 | El agente puede/no puede modificar exámenes | `test_http_matrix.py::VerbAndRoleMatrixTests` | R-API-54, A-06 | ✅ cerrada (ADR-0003) |
+| 22 | Arranque con `DEBUG=False` y sin `DJANGO_SECRET_KEY` | — | R-REP-03 | 🔴 **abierta** (ver `docs/decisiones-docker-ci.md`) |
+| 23 | `SpectacularAPIView` acepta o no token → fijar la postura del contrato | `test_api.py` + verificado en vivo | R-VIE-18, R-REP-08, Q-11 | ✅ cerrada |
+| 24 | **Frontera de confianza** (sesión ↔ API, token ↔ UI, CSRF) | `test_web.py::FrontierTests`, `test_http_matrix.py::SessionTokenFrontierTests` | R-UI-T3 | ✅ cerrada |
+| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | Suite completa (324 OK) | R-UI-T7 | ✅ cerrada |
+| 26 | Veredicto RN-01/RN-02 compartido: la misma pregunta inválida se rechaza por API **y** por formulario | `test_services.py::SameVerdictTests` | R-UI-T5 | ✅ cerrada |
+| 27 | Matriz completa por rol **en la interfaz** (el agente edita y no ve «Eliminar») | `test_permissions.py` | R-UI-07, ADR-0003 §verificación | 🔴 **abierta** (parcial: hoy hay un 403 global probado) |
+| 28 | Contraste ≥ 4.5:1 verificado con herramienta | `test_web.py` | R-UI-11 | 🔴 **abierta** (hoy es revisión a ojo) |
 
 ---
 
 ## 8. Flujo recomendado (quien lo ejecute)
 
-1. `backend-django` implementa `quizctl.exit_code_for` + `build_question_payload` (**T-IMP-1, T-IMP-2**).
-2. `seguridad` (aprobación) + `backend-django` implementan `AgentPermission` (**T-IMP-3**).
-3. `tester` ejecuta `python manage.py test` y confirma **R-REP-07**.
-4. `tester` cubre los 22 huecos de §7 en el orden indicado (**T-REC-1**).
-5. `arquitecto` decide Q-04, Q-05, Q-06 (y ADR si entra la UI).
-6. `documentador` actualiza `README.md:104-105` (que hoy dice que las pruebas fallarán) y añade la sección de UI si se aprueba.
-7. `revisor-codigo` revisa los cambios.
-8. Cierre: criterios de aceptación cumplidos y sin hallazgos críticos abiertos.
+> **Actualización: los pasos 1 a 6 están ejecutados.** Se conserva el plan original como registro; el
+> estado real de cada punto está en las filas de §2 a §7.
+
+1. ~~`backend-django` implementa `quizctl.exit_code_for` + `build_question_payload`~~ → **hecho** (`cf61a11`).
+2. ~~`seguridad` + `backend-django` implementan `AgentPermission`~~ → **hecho** (`cf61a11`, tabla compartida en ADR-0003).
+3. ~~`tester` ejecuta `python manage.py test` y confirma **R-REP-07**~~ → **hecho**: `Ran 324 tests ... OK`.
+4. `tester` cubre los huecos de §7 → **hecho en su mayor parte** (ficheros nuevos en `7992f2a`); quedan
+   cuatro abiertos, listados al final de §7.
+5. `arquitecto` decide Q-04, Q-05, Q-06 → **Q-05 y Q-06 resueltas** (400 en `?exam=` no entero; el agente
+   puede modificar exámenes pero no borrar). **Q-04 sigue abierta** (`question_count` en las escrituras).
+6. `documentador` actualiza el README → **hecho** (README reescrito con la tabla de la API y la interfaz).
+7. `revisor-codigo` revisa los cambios → **hecho** (`docs/revision-codigo.md`: veredicto CAMBIOS, 1
+   bloqueante, 9 importantes, 20 menores) y **corregido** (`7992f2a`).
+8. Cierre: criterios de aceptación cumplidos y sin hallazgos críticos abiertos → **alcanzado**, con las
+   salvedades de [[12-Limitaciones-y-pendientes]].
 
 ---
 
 ## 9. Nota de honestidad
 
-- **No se ha ejecutado ninguna prueba** en la fase A/B: este documento no puede afirmar que algo «pasa», solo que
-  **existe la prueba** que lo demostraría. Los estados `✅ cubierto` significan *prueba presente*, no *prueba verde*.
+- **Fase A/B (lo que sigue):** no se había ejecutado ninguna prueba en el momento de escribir el
+  documento; los estados `✅ cubierto` significaban *prueba presente*, no *prueba verde*.
+- **Estado actual (añadido al cerrar la implementación):** `python manage.py test` se ejecutó de verdad
+  y devolvió **`Ran 324 tests ... OK`**, y la matriz HTTP y la interfaz se comprobaron en vivo contra el
+  servidor. Ese es el fundamento de las marcas 🟢 de las filas corregidas.
 - Las citas `archivo:línea` se obtuvieron **leyendo** el repositorio; son verificables.
-- **No se ha inventado ningún requisito del campus**: el texto oficial de la rúbrica no está en el repositorio
-  (`README.md:8`). Los 4 criterios proceden del enunciado de la misión.
-- **No hay secretos** en este documento. `seed_quiz` imprime tokens por terminal (`seed_quiz.py:49-55`); aquí solo
-  se menciona el mecanismo, nunca un valor.
+- **No se ha inventado ningún requisito del campus**: el texto oficial de la rúbrica no está en el
+  repositorio. Los 4 criterios proceden del enunciado de la misión. **Esto sigue vigente.**
+- **No hay secretos** en este documento. `seed_quiz` imprime tokens por terminal (`seed_quiz.py:66-72`);
+  aquí solo se menciona el mecanismo, nunca un valor.
 - El proyecto de referencia S07 se ha usado **solo como lectura** para describir el patrón de UI del curso
-  (`blog/views.py`, `blog/templates/…`, `blog/static/css/style.css`, `config/settings.py`).
+  (`blog/views.py`, `blog/templates/…`, `blog/static/css/style.css`, `config/settings.py`). **No se ha
+  escrito en él.**
