@@ -12,20 +12,48 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 
 INSTALLED_APPS = [
     "django.contrib.auth",
+    # Web interface (ADR-0001): session cookie for the browser, flash messages
+    # after the POST/redirect pattern and static files served from the app.
+    "django.contrib.sessions",
     "django.contrib.contenttypes",
+    "django.contrib.messages",
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
+    "django.contrib.staticfiles",
     "quiz",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
+
+# The browser talks to the UI with a session cookie; the API keeps its own token
+# authentication (rest_framework below). The two are never mixed.
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
 
 DATABASES = {
     "default": {
@@ -60,3 +88,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+# The UI lives at the root of the site and names its routes "quiz_ui:...".
+# Without these three, LoginRequiredMixin would send the user to a URL that
+# does not exist in this project.
+LOGIN_URL = "quiz_ui:login"
+LOGIN_REDIRECT_URL = "quiz_ui:dashboard"
+LOGOUT_REDIRECT_URL = "quiz_ui:login"

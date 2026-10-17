@@ -1,0 +1,31 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}
+  {% if object %}Editar examen{% else %}Nuevo examen{% endif %} · Gestión de cuestionarios
+{% endblock %}
+
+{% block heading %}{% if object %}Editar examen{% else %}Nuevo examen{% endif %}{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <form method="post" class="form" data-loading-text="Guardando...">
+      {% csrf_token %}
+      <p class="visually-hidden" role="status" data-loading-status></p>
+
+      {% include "quiz/partials/_error_summary.html" with form=form %}
+
+      {% include "quiz/partials/_field.html" with field=form.title %}
+
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">
+          {% include "quiz/partials/_icon.html" with name="check" %}
+          <span>{% if object %}Guardar cambios{% else %}Crear examen{% endif %}</span>
+        </button>
+        <a class="btn btn--ghost" href="{% if object %}{% url 'quiz_ui:exam_detail' object.pk %}{% else %}{% url 'quiz_ui:exam_list' %}{% endif %}">
+          {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+          <span>Cancelar</span>
+        </a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

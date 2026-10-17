@@ -1,0 +1,62 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}Panel · Gestión de cuestionarios{% endblock %}
+{% block heading %}Panel de control{% endblock %}
+
+{% block content %}
+  <section class="stats" aria-label="Resumen del contenido">
+    <article class="stat">
+      <p class="stat__label">Exámenes</p>
+      <p class="stat__value">{{ totals.exams }}</p>
+    </article>
+    <article class="stat">
+      <p class="stat__label">Preguntas</p>
+      <p class="stat__value">{{ totals.questions }}</p>
+    </article>
+    <article class="stat">
+      <p class="stat__label">Opciones</p>
+      <p class="stat__value">{{ totals.choices }}</p>
+    </article>
+  </section>
+
+  <section class="card" aria-labelledby="accesos-rapidos">
+    <h2 class="card__title" id="accesos-rapidos">Accesos rápidos</h2>
+    <div class="actions-row">
+      <a class="btn btn--primary" href="{% url 'quiz_ui:exam_create' %}">
+        {% include "quiz/partials/_icon.html" with name="plus" %}
+        <span>Crear examen</span>
+      </a>
+      <a class="btn btn--ghost" href="{% url 'quiz_ui:exam_list' %}">
+        {% include "quiz/partials/_icon.html" with name="list" %}
+        <span>Ver todos los exámenes</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="ultimos-examenes">
+    <h2 class="card__title" id="ultimos-examenes">Últimos exámenes</h2>
+    {% if recent_exams %}
+      <ul class="link-list">
+        {% for exam in recent_exams %}
+          <li class="link-list__item">
+            <a class="link-list__link" href="{% url 'quiz_ui:exam_detail' exam.pk %}">{{ exam.title }}</a>
+            <span class="badge">{{ exam.question_count }} pregunta{{ exam.question_count|pluralize:"s" }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty">
+        {% include "quiz/partials/_icon.html" with name="inbox" %}
+        <p class="empty__title">Todavía no hay exámenes</p>
+        <p class="empty__text">
+          Empieza creando uno. Puedes también cargar los datos del laboratorio con
+          <code>python manage.py seed_quiz</code>.
+        </p>
+        <a class="btn btn--primary" href="{% url 'quiz_ui:exam_create' %}">
+          {% include "quiz/partials/_icon.html" with name="plus" %}
+          <span>Crear el primer examen</span>
+        </a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% load quiz_tags %}
+<div class="choice-row">
+  <p class="choice-row__index">
+    <span class="choice-row__number">{{ forloop.counter }}</span>
+    <span class="choice-row__label">Opción {{ forloop.counter }}</span>
+  </p>
+  <div class="choice-row__text">
+    {% include "quiz/partials/_field.html" with field=choice.text %}
+  </div>
+  <label class="choice-row__correct" for="{{ choice.is_correct.id_for_label }}">
+    {% render_field choice.is_correct %}
+    <span>Correcta</span>
+  </label>
+</div>

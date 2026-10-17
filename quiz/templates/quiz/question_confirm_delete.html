@@ -1,0 +1,18 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}Eliminar pregunta · Gestión de cuestionarios{% endblock %}
+{% block heading %}Eliminar pregunta{% endblock %}
+
+{% block breadcrumb %}
+  <nav class="breadcrumb" aria-label="Ruta de navegación">
+    <a class="link" href="{% url 'quiz_ui:exam_detail' object.exam_id %}">
+      {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+      <span>Volver al examen</span>
+    </a>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  {% url 'quiz_ui:exam_detail' object.exam_id as cancel_url %}
+  {% include "quiz/partials/_confirm_delete.html" with lead="Se va a eliminar la pregunta" object_label=object.text consequence="Sus opciones se borran con ella." cancel_url=cancel_url action_label="Sí, eliminar la pregunta" %}
+{% endblock %}

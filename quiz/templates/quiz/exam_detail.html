@@ -1,0 +1,77 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}{{ exam.title }} · Gestión de cuestionarios{% endblock %}
+{% block heading %}{{ exam.title }}{% endblock %}
+
+{% block breadcrumb %}
+  <nav class="breadcrumb" aria-label="Ruta de navegación">
+    <a class="link" href="{% url 'quiz_ui:exam_list' %}">
+      {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+      <span>Todos los exámenes</span>
+    </a>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="toolbar toolbar--split">
+    <p class="meta">
+      Creado el <time datetime="{{ exam.created_at|date:'c' }}">{{ exam.created_at|date:"d/m/Y H:i" }}</time>
+      · {{ exam.question_count }} pregunta{{ exam.question_count|pluralize:"s" }}
+    </p>
+    <div class="actions-row">
+      <a class="btn btn--ghost btn--small" href="{% url 'quiz_ui:exam_update' exam.pk %}">
+        {% include "quiz/partials/_icon.html" with name="pencil" %}
+        <span>Editar examen</span>
+      </a>
+      <a class="btn btn--danger btn--small" href="{% url 'quiz_ui:exam_delete' exam.pk %}">
+        {% include "quiz/partials/_icon.html" with name="trash" %}
+        <span>Eliminar examen</span>
+      </a>
+      <a class="btn btn--primary btn--small" href="{% url 'quiz_ui:question_create' exam.pk %}">
+        {% include "quiz/partials/_icon.html" with name="plus" %}
+        <span>Nueva pregunta</span>
+      </a>
+    </div>
+  </div>
+
+  {% if exam.questions.all %}
+    <ol class="question-list">
+      {% for question in exam.questions.all %}
+        <li class="card question-card">
+          <div class="question-card__head">
+            <h2 class="question-card__text">{{ question.text }}</h2>
+            <div class="actions-row actions-row--compact">
+              <a class="icon-btn" href="{% url 'quiz_ui:question_update' question.pk %}"
+                 aria-label="Editar la pregunta {{ forloop.counter }} de este examen" title="Editar">
+                {% include "quiz/partials/_icon.html" with name="pencil" %}
+              </a>
+              <a class="icon-btn icon-btn--danger" href="{% url 'quiz_ui:question_delete' question.pk %}"
+                 aria-label="Eliminar la pregunta {{ forloop.counter }} de este examen" title="Eliminar">
+                {% include "quiz/partials/_icon.html" with name="trash" %}
+              </a>
+            </div>
+          </div>
+          <ul class="choice-list">
+            {% for choice in question.choices.all %}
+              <li class="choice{% if choice.is_correct %} choice--correct{% endif %}">
+                {% include "quiz/partials/_icon.html" with name="check" %}
+                <span class="choice__text">{{ choice.text }}</span>
+                {% if choice.is_correct %}<span class="badge badge--success">Correcta</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <div class="empty">
+      {% include "quiz/partials/_icon.html" with name="question" %}
+      <p class="empty__title">Este examen todavía no tiene preguntas</p>
+      <p class="empty__text">Añade la primera con sus opciones y marca cuál es la correcta.</p>
+      <a class="btn btn--primary" href="{% url 'quiz_ui:question_create' exam.pk %}">
+        {% include "quiz/partials/_icon.html" with name="plus" %}
+        <span>Nueva pregunta</span>
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}

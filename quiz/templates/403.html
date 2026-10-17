@@ -1,0 +1,22 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}Acceso no autorizado · Gestión de cuestionarios{% endblock %}
+{% block heading %}No tienes permiso para ver esta página{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <p class="confirm__lead">
+      {% if exception %}{{ exception }}{% else %}Acceso no autorizado.{% endif %}
+    </p>
+    <p class="confirm__note">
+      {% include "quiz/partials/_icon.html" with name="alert" %}
+      <span>Esta interfaz está reservada al profesorado. La API mantiene sus propias reglas de acceso.</span>
+    </p>
+    <div class="actions-row">
+      <a class="btn btn--ghost" href="{% url 'quiz_ui:dashboard' %}">
+        {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+        <span>Volver al panel</span>
+      </a>
+    </div>
+  </section>
+{% endblock %}

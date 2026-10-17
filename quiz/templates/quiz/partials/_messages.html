@@ -1,0 +1,22 @@
+{% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      {% if 'error' in message.tags %}
+        <p class="alert alert--danger" role="alert">
+          {% include "quiz/partials/_icon.html" with name="alert" %}
+          <span>{{ message }}</span>
+        </p>
+      {% elif 'warning' in message.tags %}
+        <p class="alert alert--warning" role="status">
+          {% include "quiz/partials/_icon.html" with name="alert" %}
+          <span>{{ message }}</span>
+        </p>
+      {% else %}
+        <p class="alert alert--success" role="status">
+          {% include "quiz/partials/_icon.html" with name="check" %}
+          <span>{{ message }}</span>
+        </p>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

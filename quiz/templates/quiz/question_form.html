@@ -1,0 +1,59 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}
+  {% if question %}Editar pregunta{% else %}Nueva pregunta{% endif %} · Gestión de cuestionarios
+{% endblock %}
+
+{% block heading %}{% if question %}Editar pregunta{% else %}Nueva pregunta{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+  <nav class="breadcrumb" aria-label="Ruta de navegación">
+    <a class="link" href="{% url 'quiz_ui:exam_detail' exam_id %}">
+      {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+      <span>Volver al examen</span>
+    </a>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <form method="post" class="form" data-loading-text="Guardando...">
+      {% csrf_token %}
+      <p class="visually-hidden" role="status" data-loading-status></p>
+
+      {% include "quiz/partials/_error_summary.html" with form=form formset=choices_formset %}
+
+      {% include "quiz/partials/_field.html" with field=form.exam %}
+      {% include "quiz/partials/_field.html" with field=form.text %}
+
+      <fieldset class="fieldset">
+        <legend class="fieldset__legend">Opciones de la respuesta</legend>
+        <p class="fieldset__hint">
+          Escribe al menos dos opciones y marca con el botón de radio la única correcta.
+        </p>
+
+        {% if choices_formset.non_form_errors %}
+          <ul class="error-summary__list" role="alert">
+            {% for error in choices_formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+
+        {{ choices_formset.management_form }}
+        {% for choice in choices_formset %}
+          {% include "quiz/partials/_choice_row.html" with choice=choice %}
+        {% endfor %}
+      </fieldset>
+
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">
+          {% include "quiz/partials/_icon.html" with name="check" %}
+          <span>Guardar pregunta</span>
+        </button>
+        <a class="btn btn--ghost" href="{% url 'quiz_ui:exam_detail' exam_id %}">
+          {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+          <span>Cancelar</span>
+        </a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

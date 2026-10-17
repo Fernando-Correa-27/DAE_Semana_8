@@ -1,0 +1,18 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}Página no encontrada · Gestión de cuestionarios{% endblock %}
+{% block heading %}Página no encontrada{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <p class="confirm__lead">
+      La dirección <code>{{ request.path }}</code> no corresponde a ninguna pantalla.
+    </p>
+    <div class="actions-row">
+      <a class="btn btn--ghost" href="{% url 'quiz_ui:dashboard' %}">
+        {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+        <span>Volver al panel</span>
+      </a>
+    </div>
+  </section>
+{% endblock %}

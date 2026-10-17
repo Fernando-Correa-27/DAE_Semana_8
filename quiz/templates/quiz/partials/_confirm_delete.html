@@ -1,0 +1,23 @@
+<section class="card confirm">
+  <p class="confirm__lead">
+    {{ lead }} <strong>{{ object_label }}</strong>. {{ consequence }}
+  </p>
+  <p class="confirm__note">
+    {% include "quiz/partials/_icon.html" with name="alert" %}
+    <span>No hay vuelta atrás: esta acción no se puede deshacer.</span>
+  </p>
+  <form method="post" class="form" data-loading-text="Eliminando...">
+    {% csrf_token %}
+    <p class="visually-hidden" role="status" data-loading-status></p>
+    <div class="form__actions">
+      <button type="submit" class="btn btn--danger">
+        {% include "quiz/partials/_icon.html" with name="trash" %}
+        <span>{{ action_label }}</span>
+      </button>
+      <a class="btn btn--ghost" href="{{ cancel_url }}">
+        {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+        <span>Cancelar</span>
+      </a>
+    </div>
+  </form>
+</section>
