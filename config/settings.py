@@ -69,6 +69,11 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "static/"  # without it, the test server (LiveServerTestCase) answers 500 to every request
 
+# One page size for every listing of the project: the API (below) and the web
+# interface use this same number, so «Anterior/Siguiente» means the same thing in
+# both presentations (R-UI-03). Change it here and both move together.
+PAGE_SIZE = 5
+
 REST_FRAMEWORK = {
     # Identity comes from a token in the Authorization header: no cookies, no sessions.
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
@@ -78,7 +83,7 @@ REST_FRAMEWORK = {
         "quiz.permissions.AgentPermission",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 5,
+    "PAGE_SIZE": PAGE_SIZE,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 

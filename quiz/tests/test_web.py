@@ -6,6 +6,7 @@ plantillas, formularios) y que las dos fronteras siguen sin mezclarse.
 """
 import re
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.staticfiles import finders
 from django.test import Client, TestCase
@@ -129,14 +130,15 @@ class DashboardAndListTests(UiTestCase):
         self.assertEqual(response.context["page_obj"].paginator.num_pages, 1)
 
     def test_exam_list_is_paginated(self):
+        """Eleven exams, five per page (the same number the API paginates with)."""
         Exam.objects.all().delete()
         for index in range(11):
             Exam.objects.create(title=f"Examen {index:02d}")
         first = self.client.get(reverse("quiz_ui:exam_list"))
-        self.assertEqual(len(first.context["exams"]), 10)
-        second = self.client.get(reverse("quiz_ui:exam_list"), {"page": 2})
-        self.assertEqual(len(second.context["exams"]), 1)
-        self.assertContains(second, "Examen 10")
+        self.assertEqual(len(first.context["exams"]), settings.PAGE_SIZE)
+        third = self.client.get(reverse("quiz_ui:exam_list"), {"page": 3})
+        self.assertEqual(len(third.context["exams"]), 1)
+        self.assertContains(third, "Examen 10")
 
 
 class ExamCrudTests(UiTestCase):

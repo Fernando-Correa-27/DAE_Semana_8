@@ -29,6 +29,13 @@ ACTION_METHODS = {
     "create": "POST", "update": "PUT", "partial_update": "PATCH", "destroy": "DELETE",
 }
 
+# The action each HTTP verb stands for in the browser interface. A verb that is not
+# in this map is not an action of that interface, so it is denied to everybody.
+WEB_ACTION_BY_METHOD = {
+    "GET": "read", "HEAD": "read", "OPTIONS": "read",
+    "POST": "create", "PUT": "modify", "PATCH": "modify", "DELETE": "delete",
+}
+
 
 class QuizRuleError(Exception):
     """A rule of the quiz was broken. Its message is what the user reads."""
@@ -65,6 +72,26 @@ def method_of(request, view=None) -> str:
 def may(role: str, method: str) -> bool:
     """May a role use this method? Unknown verbs are denied for everybody (deny by default)."""
     return str(method or "").upper() in METHODS_BY_ROLE.get(role, frozenset())
+
+
+def web_action(method: str) -> str:
+    """What this HTTP verb means in the browser: read, create, modify, delete, or ""."""
+    return WEB_ACTION_BY_METHOD.get(str(method or "").upper(), "")
+
+
+def may_use(user, method: str) -> bool:
+    """May this user perform this action from the browser interface?
+
+    There is one table and one decision: the role comes from ``role_of``, so the
+    browser asks exactly what the API asks and the two can never diverge (a
+    superuser without ``is_staff`` is a person in both). The browser interface adds
+    a single rule of its own (R-UI-07): it is private and it exists to manage
+    content, so it is opened to the person and to nobody else. An unknown verb is
+    denied to everybody: deny by default.
+    """
+    if not web_action(method):
+        return False
+    return role_of(user) == PERSON
 
 
 # --- the invariant of a question -----------------------------------------------------------------

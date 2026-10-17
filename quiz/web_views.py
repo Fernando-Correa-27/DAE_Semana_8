@@ -4,8 +4,10 @@ They are Django views on purpose: this module does not belong to DRF and does
 not touch ``quiz/views.py``. Their only way to write a question is
 ``quiz.services``: the invariant of the options is not repeated here.
 """
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import LoginView, LogoutView
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
@@ -18,12 +20,11 @@ from django.views.generic import (
 )
 
 from . import queries, services
-from .forms import ChoiceFormSetFactory, ExamForm, QuestionForm
+from .forms import CHOICES_PREFIX, ChoiceFormSetFactory, ExamForm, QuestionForm
 from .models import Exam, Question
 from .web_mixins import StaffRequiredMixin, SuccessMessageMixin
 
-PAGE_SIZE = 10
-FORM_PREFIX = "choices"
+PAGE_SIZE = settings.PAGE_SIZE  # the same number the API paginates with
 
 
 class SignInView(LoginView):
@@ -44,7 +45,7 @@ class DashboardView(StaffRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["totals"] = queries.totals()
-        context["recent_exams"] = queries.exams_with_counts()[:5]
+        context["recent_exams"] = queries.recent_exams()
         return context
 
 
@@ -105,6 +106,51 @@ class ExamDetailView(StaffRequiredMixin, DetailView):
         return queries.exam_with_questions()
 
 
+class QuestionListView(StaffRequiredMixin, ListView):
+    """Every question, searchable by its text and filterable by exam (R-UI-02, R-UI-04).
+
+    The filters travel in the URL (``?q=`` and ``?exam=``), so the listing a person
+    is looking at can be shared, bookmarked and reached again by «Anterior/Siguiente».
+    """
+
+    context_object_name = "questions"
+    template_name = "quiz/question_list.html"
+    paginate_by = PAGE_SIZE
+
+    def get_exam(self):
+        """The exam the listing is filtered by, or None. A value that is not an id is a 404."""
+        if not hasattr(self, "_exam"):
+            raw = self.request.GET.get("exam", "").strip()
+            if not raw:
+                self._exam = None
+            elif not raw.isascii() or not raw.isdecimal():
+                raise Http404("Ese examen no existe.")
+            else:
+                self._exam = get_object_or_404(Exam, pk=int(raw))
+        return self._exam
+
+    def get_text(self):
+        """The words to look for in the statement, if any."""
+        return self.request.GET.get("q", "").strip()
+
+    def get_queryset(self):
+        return queries.questions_with_choices(exam=self.get_exam(), text=self.get_text())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        context.update(
+            {
+                "exams": queries.exams_with_counts(),
+                "filtered_exam": self.get_exam(),
+                "text": self.get_text(),
+                "base_query": params.urlencode(),
+            }
+        )
+        return context
+
+
 class QuestionFormView(StaffRequiredMixin, CreateView):
     """Common ground of creating and editing a question with its options.
 
@@ -123,8 +169,8 @@ class QuestionFormView(StaffRequiredMixin, CreateView):
     def get_formset(self):
         """The options formset: bound to the posted data, or empty for a new form."""
         if self.request.method == "POST":
-            return ChoiceFormSetFactory(self.request.POST, instance=self.get_instance(), prefix=FORM_PREFIX)
-        return ChoiceFormSetFactory(instance=self.get_instance(), prefix=FORM_PREFIX)
+            return ChoiceFormSetFactory(self.request.POST, instance=self.get_instance(), prefix=CHOICES_PREFIX)
+        return ChoiceFormSetFactory(instance=self.get_instance(), prefix=CHOICES_PREFIX)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

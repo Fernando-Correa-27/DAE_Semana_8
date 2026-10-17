@@ -33,9 +33,9 @@
         </p>
 
         {% if choices_formset.non_form_errors %}
-          <ul class="error-summary__list" role="alert">
-            {% for error in choices_formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
-          </ul>
+          <p class="fieldset__hint">
+            <a class="link" href="#error-summary">Las opciones tienen un error: revisa el aviso de arriba</a>
+          </p>
         {% endif %}
 
         {{ choices_formset.management_form }}

@@ -4,7 +4,8 @@
     <ul class="pagination__list">
       <li>
         {% if page_obj.has_previous %}
-          <a class="btn btn--ghost btn--small" href="?page={{ page_obj.previous_page_number }}"
+          <a class="btn btn--ghost btn--small"
+             href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}"
              rel="prev">
             {% include "quiz/partials/_icon.html" with name="arrow-left" %}
             <span>Anterior</span>
@@ -18,7 +19,8 @@
       </li>
       <li>
         {% if page_obj.has_next %}
-          <a class="btn btn--ghost btn--small" href="?page={{ page_obj.next_page_number }}" rel="next">
+          <a class="btn btn--ghost btn--small"
+             href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}" rel="next">
             <span>Siguiente</span>
             {% include "quiz/partials/_icon.html" with name="arrow-right" %}
           </a>

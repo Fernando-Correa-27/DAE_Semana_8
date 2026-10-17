@@ -18,6 +18,7 @@ urlpatterns = [
     path("examenes/<int:pk>/", web_views.ExamDetailView.as_view(), name="exam_detail"),
     path("examenes/<int:pk>/editar/", web_views.ExamUpdateView.as_view(), name="exam_update"),
     path("examenes/<int:pk>/eliminar/", web_views.ExamDeleteView.as_view(), name="exam_delete"),
+    path("preguntas/", web_views.QuestionListView.as_view(), name="question_list"),
     path(
         "examenes/<int:exam_pk>/preguntas/nuevo/",
         web_views.QuestionCreateView.as_view(),

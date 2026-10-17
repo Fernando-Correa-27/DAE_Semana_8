@@ -1,0 +1,117 @@
+{% extends "quiz/base.html" %}
+
+{% block title %}Preguntas · Gestión de cuestionarios{% endblock %}
+{% block heading %}Preguntas{% endblock %}
+
+{% block content %}
+  <section class="card" aria-labelledby="filtros-preguntas">
+    <h2 class="card__title" id="filtros-preguntas">Buscar y filtrar</h2>
+    <form method="get" action="{% url 'quiz_ui:question_list' %}" class="form">
+      <div class="field">
+        <label class="field__label" for="id_q">Texto del enunciado</label>
+        <input type="text" id="id_q" name="q" value="{{ text }}" maxlength="200"
+               placeholder="Palabras del enunciado">
+        <p class="field__help" id="id_q-help">No distingue mayúsculas de minúsculas.</p>
+      </div>
+      <div class="field">
+        <label class="field__label" for="id_exam">Examen</label>
+        <select id="id_exam" name="exam" aria-describedby="id_exam-help">
+          <option value="">Todos los exámenes</option>
+          {% for item in exams %}
+            <option value="{{ item.pk }}"{% if filtered_exam.pk == item.pk %} selected{% endif %}>
+              {{ item.title }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="field__help" id="id_exam-help">Elige un examen para ver solo sus preguntas.</p>
+      </div>
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary btn--small">
+          {% include "quiz/partials/_icon.html" with name="check" %}
+          <span>Filtrar</span>
+        </button>
+        <a class="btn btn--ghost btn--small" href="{% url 'quiz_ui:question_list' %}">
+          {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+          <span>Limpiar filtros</span>
+        </a>
+      </div>
+    </form>
+  </section>
+
+  <p class="meta" role="status">
+    {% if text or filtered_exam %}
+      {{ page_obj.paginator.count }} pregunta{{ page_obj.paginator.count|pluralize:"s" }}
+      {% if filtered_exam %}del examen «{{ filtered_exam.title }}»{% endif %}
+      {% if text %}que contienen «{{ text }}»{% endif %}.
+    {% else %}
+      {{ page_obj.paginator.count }} pregunta{{ page_obj.paginator.count|pluralize:"s" }} en total.
+    {% endif %}
+  </p>
+
+  {% if questions %}
+    <div class="table-wrapper">
+      <table class="table">
+        <caption class="visually-hidden">Preguntas con su examen, sus opciones y sus acciones</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="table__number">Id</th>
+            <th scope="col">Examen</th>
+            <th scope="col">Enunciado</th>
+            <th scope="col" class="table__number">Opciones</th>
+            <th scope="col">Correcta</th>
+            <th scope="col" class="table__actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for question in questions %}
+            <tr>
+              <td data-label="Id" class="table__number">{{ question.pk }}</td>
+              <th scope="row" data-label="Examen">
+                <a class="link" href="{% url 'quiz_ui:exam_detail' question.exam_id %}">{{ question.exam.title }}</a>
+              </th>
+              <td data-label="Enunciado">{{ question.text }}</td>
+              <td data-label="Opciones" class="table__number">{{ question.choices.all|length }}</td>
+              <td data-label="Correcta">
+                {% for choice in question.choices.all %}
+                  {% if choice.is_correct %}{{ choice.text }}{% endif %}
+                {% endfor %}
+              </td>
+              <td data-label="Acciones" class="table__actions">
+                <div class="actions-row actions-row--compact">
+                  <a class="icon-btn" href="{% url 'quiz_ui:question_update' question.pk %}"
+                     aria-label="Editar la pregunta {{ question.pk }}" title="Editar">
+                    {% include "quiz/partials/_icon.html" with name="pencil" %}
+                  </a>
+                  <a class="icon-btn icon-btn--danger" href="{% url 'quiz_ui:question_delete' question.pk %}"
+                     aria-label="Eliminar la pregunta {{ question.pk }}" title="Eliminar">
+                    {% include "quiz/partials/_icon.html" with name="trash" %}
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "quiz/partials/_pagination.html" %}
+  {% else %}
+    <div class="empty">
+      {% include "quiz/partials/_icon.html" with name="question" %}
+      {% if text or filtered_exam %}
+        <p class="empty__title">Ninguna pregunta coincide con la búsqueda</p>
+        <p class="empty__text">Prueba con otras palabras o quita el filtro de examen.</p>
+        <a class="btn btn--primary" href="{% url 'quiz_ui:question_list' %}">
+          {% include "quiz/partials/_icon.html" with name="arrow-left" %}
+          <span>Limpiar filtros</span>
+        </a>
+      {% else %}
+        <p class="empty__title">Todavía no hay preguntas</p>
+        <p class="empty__text">Abre un examen y añade su primera pregunta con sus opciones.</p>
+        <a class="btn btn--primary" href="{% url 'quiz_ui:exam_list' %}">
+          {% include "quiz/partials/_icon.html" with name="list" %}
+          <span>Ver los exámenes</span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

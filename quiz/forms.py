@@ -16,6 +16,11 @@ from .models import Choice, Exam, Question
 
 TEXTAREA_ATTRS = {"rows": 5}
 
+# The prefix of the formset of options. It builds the names the browser sends
+# (``choices-0-text`` and the single radio group ``choices-correct``), so the view
+# that builds it and the widgets that answer to it read it from here.
+CHOICES_PREFIX = "choices"
+
 
 class ExamForm(forms.ModelForm):
     """Create and edit an exam. One field, one label, no placeholder tricks."""
@@ -57,6 +62,13 @@ class CorrectChoiceRadio(forms.CheckboxInput):
 
     template_name = "quiz/widgets/correct_choice.html"
 
+    # Set by the formset: the row this radio belongs to, the name they all share
+    # and whether the person had already chosen it (``bool(value)`` only carries
+    # what came from the model, never what came back in the POST).
+    group_name = ""
+    row_index = 0
+    chosen = False
+
     def __init__(self, attrs=None):
         defaults = {"class": "choice-radio"}
         defaults.update(attrs or {})
@@ -71,13 +83,10 @@ class CorrectChoiceRadio(forms.CheckboxInput):
                 "type": "radio",
                 "name": self.group_name,
                 "value": self.row_index,
-                "checked": bool(value),
+                "checked": bool(value) or self.chosen,
                 "attrs": self.build_attrs(self.attrs, attrs),
             }
         }
-
-    group_name = ""
-    row_index = 0
 
 
 class ChoiceForm(forms.ModelForm):
@@ -106,10 +115,15 @@ class ChoiceFormSet(forms.BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.correct_field_name = f"{self.prefix}-correct"
+        # The browser sends the chosen option as the index of its row, so the form
+        # comes back bound without any ``choices-N-is_correct``: without this the
+        # person would lose the radio they had marked (R-UI-05).
+        selected = self.data.get(self.correct_field_name) if self.is_bound else None
         for index, form in enumerate(self.forms):
             widget = form.fields["is_correct"].widget
             widget.group_name = self.correct_field_name
             widget.row_index = index
+            widget.chosen = selected is not None and str(index) == selected
 
     def filled_choices(self):
         """The options the person actually wrote, as the service wants them."""
@@ -142,7 +156,7 @@ ChoiceFormSetFactory = inlineformset_factory(
     form=ChoiceForm,
     formset=ChoiceFormSet,
     extra=3,
-    min_num=2,
+    min_num=services.MIN_CHOICES,
     validate_min=False,  # the wording of "at least two" belongs to the service
     can_delete=False,
 )

@@ -11,6 +11,9 @@
         <a class="navbar__link{% if request.resolver_match.url_name == 'exam_list' %} is-current{% endif %}"
            href="{% url 'quiz_ui:exam_list' %}">{% include "quiz/partials/_icon.html" with name="list" %}
           <span>Exámenes</span></a>
+        <a class="navbar__link{% if request.resolver_match.url_name == 'question_list' %} is-current{% endif %}"
+           href="{% url 'quiz_ui:question_list' %}">{% include "quiz/partials/_icon.html" with name="question" %}
+          <span>Preguntas</span></a>
       </nav>
       <div class="navbar__session">
         <span class="navbar__user" title="Conectado como {{ user.get_username }}">
