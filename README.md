@@ -11,9 +11,10 @@ dominio de **exámenes, preguntas y opciones** (Django + Django REST Framework) 
 Las dos son **dos presentaciones del mismo dominio**: la invariante de negocio y la tabla de roles
 viven **una sola vez**, en `quiz/services.py`, y ninguna de las dos se llama a la otra.
 
-> ⚠️ **Esto es configuración de laboratorio, no de producción.** Arranca con `DEBUG = True` y con un
-> `SECRET_KEY` de reserva en el código. Está pensado para `runserver` en `127.0.0.1`. Ver
-> [Configuración](#configuración).
+> ⚠️ **Esto es configuración de laboratorio, no de producción.** Arranca con `DJANGO_DEBUG` en su valor
+> por defecto de desarrollo (`1`) y con una `SECRET_KEY` **generada en local** (fichero `.secret_key`, nunca
+> en el código). Está pensado para `runserver` en `127.0.0.1`. Ver [Configuración](#configuración) y
+> [Ejecutar fuera de desarrollo](#ejecutar-fuera-de-desarrollo).
 
 ---
 
@@ -59,13 +60,18 @@ python manage.py runserver
 ```
 
 - `migrate` crea las tablas (`quiz/migrations/0001_initial.py`).
+- En el **primer arranque**, si no hay `DJANGO_SECRET_KEY` en el entorno, Django **genera** una clave
+  aleatoria y la guarda en `.secret_key`, en la raíz del proyecto. **No hay que hacer nada a mano**, y el
+  fichero está **ignorado por git**. La clave no se imprime nunca: sin ese fichero la sesión de la
+  interfaz se invalidaría en cada reinicio.
 - `seed_quiz` carga los datos fijos del laboratorio y crea los usuarios **`profe`** (persona,
-  `is_staff=True`) y **`agente`** (grupo `agente`). **Imprime los dos tokens por terminal**: cópialos
-  de ahí; nunca están en el repositorio.
+  `is_staff=True`) y **`agente`** (grupo `agente`). **Los tokens ya no se imprimen** por terminal: el comando
+  resume los datos y explica cómo verlos. Para leerlos hay que pedirlo explícitamente con
+  `python manage.py seed_quiz --show-tokens`; cópialos de ahí, nunca están en el repositorio.
 - `--password` es **necesario para entrar en la interfaz web**: sin la opción, `profe` nace con
   `set_unusable_password()` (porque la API no usa contraseñas) y no hay nadie que pueda iniciar
   sesión en el navegador. Si ya existe y quieres otra clave:
-  `python manage.py changepassword profe`.
+  `python manage.py changepassword profe`. La contraseña **nunca** se imprime, ni con `--show-tokens`.
 - `seed_quiz` es **idempotente respecto a los tokens**: al repetirlo no cambian, así que las
   variables de entorno siguen valiendo. Ojo: sí **borra y recarga** exámenes, preguntas y opciones.
 
@@ -75,24 +81,61 @@ El servidor queda en `http://127.0.0.1:8000`.
 
 Se nombran; los valores no se documentan aquí.
 
-| Variable | Para qué |
-|---|---|
-| `QUIZ_URL` | Base de la API que llama `quizctl.py` y `agent/`. Por defecto `http://127.0.0.1:8000`. |
-| `QUIZ_TOKEN_HUMANO` | Token de **la persona** (`profe`). Es el único que puede borrar y el que aprueba los planes R2 del agente. |
-| `QUIZ_TOKEN_AGENTE` | Token del **agente**. Lee, crea y modifica; nunca borra. |
-| `QUIZ_TOKEN` | Token con el que llama `quizctl.py`. Se asigna al que corresponda en cada prueba. |
-| `DJANGO_SECRET_KEY` | Clave de Django. Sin ella arranca con un valor de reserva **solo válido en el aula**. |
-| `LLM_URL` | Endpoint del modelo local para `agent/llm.py`. Si no está, el adaptador no se usa. |
-| `LLM_MODEL` | Nombre del modelo que se pide a `LLM_URL`. |
+### Variables del servidor (`config/settings.py`)
+
+| Variable | Para qué | Valor por defecto |
+|---|---|---|
+| `DJANGO_SECRET_KEY` | Clave de Django: firma la cookie de sesión de la interfaz y los tokens CSRF | **Ninguno.** Sin ella, y con `DJANGO_DEBUG=1`, se lee o se genera una clave aleatoria en `.secret_key` (ignorado por git). Con `DJANGO_DEBUG=0` el arranque **falla** con `ImproperlyConfigured` si no está en el entorno |
+| `DJANGO_DEBUG` | Interruptor de desarrollo: `1` activa el modo de laboratorio, cualquier otro valor lo apaga | `1` (el laboratorio arranca sin configurar nada) |
+| `DJANGO_ALLOWED_HOSTS` | Lista de `Host` admitidos, **separada por comas** | Sin valor: con `DJANGO_DEBUG=1` vale `localhost`, `127.0.0.1` y `testserver`; con `DJANGO_DEBUG=0` el arranque **falla** si no se indica |
+
+**Ninguna de las tres tiene un valor de reserva en el código.** La clave nunca se imprime por terminal ni
+se versiona.
+
+### Variables de los clientes (`quizctl.py` y `agent/`)
+
+| Variable | Para qué | Valor por defecto |
+|---|---|---|
+| `QUIZ_URL` | Base de la API que llama `quizctl.py` y `agent/` | `http://127.0.0.1:8000` |
+| `QUIZ_TOKEN_HUMANO` | Token de **la persona** (`profe`). Es el único que puede borrar y el que aprueba los planes R2 del agente | — (obligatoria para usar el cliente) |
+| `QUIZ_TOKEN_AGENTE` | Token del **agente**. Lee, crea y modifica; nunca borra | — |
+| `QUIZ_TOKEN` | Token con el que llama `quizctl.py`. Se asigna al que corresponda en cada prueba | — |
+| `LLM_URL` | Endpoint del modelo local para `agent/llm.py`. Si no está, el adaptador no se usa | — (ruta del modelo desactivada) |
+| `LLM_MODEL` | Nombre del modelo que se pide a `LLM_URL` | — |
 
 En PowerShell (otra terminal, con el servidor ya arrancado):
 
 ```powershell
 $env:QUIZ_URL = "http://127.0.0.1:8000"
-$env:QUIZ_TOKEN_HUMANO = "<lo que imprimió seed_quiz>"
-$env:QUIZ_TOKEN_AGENTE = "<lo que imprimió seed_quiz>"
+$env:QUIZ_TOKEN_HUMANO = "<lo que imprimió seed_quiz --show-tokens>"
+$env:QUIZ_TOKEN_AGENTE = "<lo que imprimió seed_quiz --show-tokens>"
 $env:QUIZ_TOKEN = $env:QUIZ_TOKEN_HUMANO
 ```
+
+### Ejecutar fuera de desarrollo
+
+Con `DJANGO_DEBUG=0` el proyecto **falla cerrado** si falta `DJANGO_SECRET_KEY` o `DJANGO_ALLOWED_HOSTS`,
+y la clave guardada en `.secret_key` deja de servir: fuera del aula la clave solo vale si viene del
+entorno. En PowerShell, en la misma terminal donde arrancas el servidor:
+
+```powershell
+$env:DJANGO_DEBUG = "0"
+$env:DJANGO_SECRET_KEY = "<clave larga y aleatoria que generes tú; no la reutilices del aula>"
+$env:DJANGO_ALLOWED_HOSTS = "127.0.0.1,localhost"
+python manage.py runserver
+```
+
+- El valor de `DJANGO_SECRET_KEY` **no se documenta en ningún sitio** y no debe ir en el repositorio ni
+  en `.env` versionado.
+- Para generar una propia: `python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"`
+  imprime una clave por pantalla; no la guardes en un fichero del proyecto.
+
+> ⚠️ **Limitación conocida del laboratorio:** con `DJANGO_DEBUG=0`, `runserver` **deja de servir
+> `/static/`**, así que la interfaz se ve sin su hoja de estilos. La solución sería `collectstatic` más un
+> servidor estático real (y HTTPS, que este proyecto no trae), y eso ya es **despliegue**, no laboratorio.
+> Está declarado en [`docs/decisiones-docker-ci.md`](docs/decisiones-docker-ci.md) y en
+> [[Semana_8/12-Limitaciones-y-pendientes]]. Para la demo del aula, lo normal es quedarse en el valor
+> por defecto `DJANGO_DEBUG=1`.
 
 ---
 
@@ -199,6 +242,11 @@ al login; un usuario autenticado que no sea `profe` recibe **403**.
 - **Errores:** si una pregunta tiene menos de 2 opciones o no tiene exactamente 1 correcta, el
   formulario vuelve a la misma pantalla **con el error y sin perder lo escrito**.
 - **Frontera de confianza:** la sesión **no** abre la API y el token **no** abre la interfaz.
+- **Cabeceras de seguridad:** todas las respuestas **HTML** de la interfaz llevan `X-Frame-Options: DENY`
+  (no se puede incrustar en otro sitio) y una `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'`.
+  La CSP la emite `config/middleware.py` **solo** en respuestas `text/html`: la API (JSON) y los ficheros
+  de `/static/` no la llevan, porque una CSP no dice nada útil de unos y otros. Para que la CSP sea
+  aplicable sin `unsafe-inline`, el `<script>` de `base.html` se movió a `quiz/static/quiz/js/app.js`.
 
 ---
 
@@ -253,7 +301,7 @@ un campo viene con tipo incorrecto, el `exam` no existe, o `?exam=` no es un ide
 | **403** | Autenticado pero sin permiso: el agente o el lector intentan escribir o borrar; verbo desconocido. |
 | **404** | El recurso no existe, o `?page=` apunta a una página fuera de rango. |
 | **405** | El método HTTP no está implementado en esa ruta. |
-| **500** | Fallo interno del servidor. Con `DEBUG = True` la página técnica de Django muestra detalles internos: razón de más para no usar esto fuera del aula. |
+| **500** | Fallo interno del servidor. Con `DJANGO_DEBUG=1` (el valor por defecto del laboratorio) la página técnica de Django muestra detalles internos: razón de más para no usar esto fuera del aula. |
 
 ### Permisos por operación
 
@@ -272,14 +320,15 @@ un campo viene con tipo incorrecto, el `exam` no existe, o `?exam=` no es un ide
 python manage.py test
 ```
 
-**Resultado real de la última ejecución: `Ran 324 tests ... OK`.**
+**Resultado real de la última ejecución: `Ran 339 tests ... OK`.**
 
 | Módulo | Qué cubre |
-|---|---|
+|---|---|---|
 | `quiz/tests/test_api.py` | El contrato del laboratorio (entregado, sin tocar): serializadores, paginación, filtros, sincronía con la pasarela. |
 | `quiz/tests/test_agent.py` | Frontera R0/R1/R2, allowlist, aprobación humana, auditoría, adaptador de modelo. |
 | `quiz/tests/test_quizctl.py` | Códigos de salida, construcción del cuerpo de pregunta y el cliente contra un servidor vivo. |
 | `quiz/tests/test_permissions.py` | La matriz de roles de la Parte 3. |
+| `quiz/tests/test_config_hardening.py` | Endurecimiento de configuración: clave no publicada y generada, arranque que **falla cerrado** sin `DJANGO_SECRET_KEY`/`DJANGO_ALLOWED_HOSTS` con `DEBUG=0`, `X-Frame-Options` y CSP solo en HTML, y `seed_quiz` sin tokens en claro salvo con `--show-tokens`. |
 | `quiz/tests/test_services.py` | La invariante **una sola vez**: serializer y formset dan el mismo veredicto; resolución de verbos y denegación por defecto. |
 | `quiz/tests/test_http_matrix.py` | Matriz de códigos por endpoint, método y rol; raíz del navegador de DRF; frontera sesión/token. |
 | `quiz/tests/test_http_client.py` | El cliente y la pasarela hablando con un servidor real. |
@@ -295,14 +344,14 @@ Runner: `python manage.py test` (el repositorio no adopta `pytest`).
 
 | Ruta | Para qué |
 |---|---|
-| `config/` | `settings.py` (una sola constante `PAGE_SIZE` para API e interfaz) y `urls.py`. |
+| `config/` | `settings.py` (una sola constante `PAGE_SIZE` para API e interfaz), `middleware.py` (CSP solo en HTML) y `urls.py`. |
 | `quiz/models.py` | `Exam`, `Question`, `Choice`. |
 | `quiz/services.py` | **Reglas de negocio y tabla de roles**, escritas una sola vez. |
 | `quiz/queries.py` | Lecturas del dominio, sin N+1. |
 | `quiz/serializers.py`, `quiz/views.py`, `quiz/urls.py` | La API: serializadores (que delegan en `services`), vistas y rutas. |
 | `quiz/permissions.py` | `AgentPermission`: el adaptador de DRF a la tabla de roles. |
 | `quiz/forms.py`, `quiz/web_views.py`, `quiz/web_urls.py`, `quiz/web_mixins.py` | La interfaz web. |
-| `quiz/templates/`, `quiz/static/` | Plantillas, parciales y la hoja CSS propia. |
+| `quiz/templates/`, `quiz/static/` | Plantillas, parciales, la hoja CSS propia y el `app.js` que la CSP exige fuera de línea. |
 | `quiz/management/commands/seed_quiz.py` | Datos de arranque y usuarios con token. |
 | `agent/` | Frontera cerrada del agente de IA y adaptador opcional a un modelo local. |
 | `quizctl.py` | Cliente de consola. |
@@ -314,8 +363,10 @@ Runner: `python manage.py test` (el repositorio no adopta `pytest`).
 | Ajuste | Valor en el repositorio | Comentario |
 |---|---|---|
 | Base de datos | SQLite (`db.sqlite3`) | Sin servidor. `db.sqlite3` está ignorado por git. |
-| `DEBUG` | `True` | **Solo laboratorio.** Con `DEBUG=True` un 500 muestra la página técnica de Django. |
-| `SECRET_KEY` | Reserva `dev-only-not-a-secret` en `config/settings.py:9` | **Solo laboratorio.** Fuera del aula, `DJANGO_SECRET_KEY` es obligatoria. Con la interfaz por sesión, filtrarla permite falsificar cookies. |
+| `DEBUG` | `True` por defecto, se controla con `DJANGO_DEBUG` | **Solo laboratorio.** Con `DEBUG=True` un 500 muestra la página técnica de Django; ver [Ejecutar fuera de desarrollo](#ejecutar-fuera-de-desarrollo). |
+| `SECRET_KEY` | **Ninguna en el código.** Del entorno (`DJANGO_SECRET_KEY`), o leída/generada en `.secret_key` (ignorado por git) mientras `DEBUG` esté activo | Con `DEBUG` apagado, la clave guardada en disco **no** cuenta: sin variable de entorno el arranque falla. Con la interfaz por sesión, filtrarla permite falsificar cookies. |
+| `ALLOWED_HOSTS` | Del entorno (`DJANGO_ALLOWED_HOSTS`, separada por comas); en desarrollo, `localhost`, `127.0.0.1`, `testserver` | Con `DEBUG` apagado y sin la variable, el arranque falla. |
+| Cabeceras de la interfaz | `X_FRAME_OPTIONS = "DENY"` y `CSP default-src 'self'; frame-ancestors 'none'` | Solo en respuestas HTML. Cierra el clickjacking. |
 | Autenticación | API por token; interfaz por cookie de sesión. **Nunca se mezclan.** | CSRF obligatorio solo en la interfaz. |
 | Paginación | `PAGE_SIZE = 5` | Compartida por la API y la interfaz. |
 

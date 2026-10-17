@@ -8,7 +8,7 @@ Volver al [[00-Indice]] · Anterior: [[08-Seguridad]] · Siguiente: [[10-Git-y-c
 python manage.py test
 ```
 
-**`Ran 324 tests ... OK`** · y `python manage.py check` → sin problemas.
+**`Ran 339 tests ... OK`** · y `python manage.py check` → sin problemas.
 
 | Momento | Resultado |
 |---|---|
@@ -16,6 +16,7 @@ python manage.py test
 | Después de `cf61a11` | Partes 2 y 3 implementadas |
 | Después de `7c87fd9` | Interfaz web |
 | Después de `7992f2a` | Revisión corregida y cobertura ampliada → **324 OK** |
+| Después de `a82978e` | Endurecimiento de configuración (SUI-01/02/04/05) + `test_config_hardening.py` → **339 OK** |
 
 Runner: **`python manage.py test`**. El repositorio no adopta `pytest` ni `pytest-django`, y nada de lo
 implementado obliga a cambiarlo.
@@ -36,6 +37,7 @@ implementado obliga a cambiarlo.
 | `test_web.py` | Login/logout, CRUD completo por HTTP, 302 del anónimo, 403 por rol, POST sin CSRF, activos servidos sin CDN |
 | `test_web_review.py` | Anuncio único del error (un solo `role="alert"`), opción correcta conservada tras un POST inválido, orden de los últimos exámenes, listado de preguntas con filtros, una sola página de 5 |
 | `test_web_gaps.py` | Objetos inexistentes, paginación, verbos, sesión, límites de campo, usuario no staff, contenido del detalle |
+| `test_config_hardening.py` | **Configuración segura** (15 pruebas, `a82978e`): la clave no es la publicada y se genera; `.secret_key` no está en git; el arranque **falla cerrado** con `DJANGO_DEBUG=0` sin `DJANGO_SECRET_KEY` ni `DJANGO_ALLOWED_HOSTS`; `DEBUG` lee el entorno; `X-Frame-Options: DENY` y CSP en login, página autenticada y página de error, **y no** en JSON; no hace falta `<script>` inline; `seed_quiz` no imprime tokens salvo `--show-tokens` y nunca la contraseña |
 
 ## Matriz de códigos verificada en vivo
 
@@ -82,6 +84,9 @@ implementado obliga a cambiarlo.
 | `test_web_review.py::RecentExamsTests` | Los últimos exámenes son los más nuevos (I4) |
 | `test_web_review.py::OnePageSizeTests` | Una sola constante de paginación (I8) |
 | `test_web_review.py::QuestionListingTests` | Tabla de preguntas con filtro y búsqueda (I7 / R-UI-02 y R-UI-04) |
+| `test_config_hardening.py::SecretKeyTests` + `::StartupGuardTests` | SUI-01 y SUI-02: ninguna credencial en el código y arranque que **falla cerrado** |
+| `test_config_hardening.py::ResponseHeaderTests` | SUI-05: `X-Frame-Options: DENY` y CSP solo en HTML |
+| `test_config_hardening.py::SeedOutputTests` | SUI-04: la salida de `seed_quiz` es opt-in y nunca incluye la contraseña |
 
 ## Lo que **no** está cubierto por prueba
 
@@ -92,6 +97,7 @@ Se declara explícitamente para no presentar como verde lo que es una revisión 
 | Contraste ≥ 4.5:1 en la hoja de estilos | Revisado a ojo sobre el CSS; el propio requisito (R-UI-11) admite revisión como criterio |
 | Matriz completa por rol **en la interfaz** (el agente edita y no ve «Eliminar») | Hoy hay un 403 global correctamente probado; falta la matriz por rol que pedía ADR-0003 |
 | `question_count` en las **respuestas de escritura** | Depende de Q-04, sin decidir. Ver [[12-Limitaciones-y-pendientes]] |
+| **Límite de intentos en el login** de la interfaz | **No está implementado**: SUI-03 sigue abierto y aceptado como riesgo del laboratorio. No se afirma que exista |
 
 ## Reglas de la estrategia de pruebas
 
@@ -100,7 +106,7 @@ Se declara explícitamente para no presentar como verde lo que es una revisión 
 2. Toda regla de negocio necesita su caso inválido: mínimo 2 opciones, exactamente 1 correcta.
 3. Todo permiso necesita su matriz: rol × método × recurso.
 4. Todo filtro necesita su caso mal escrito (el `?exam=abc` es el ejemplo).
-5. Regresión obligatoria tras tocar `settings.py`: **está cubierta** (324 OK).
+5. Regresión obligatoria tras tocar `settings.py`: **está cubierta** (339 OK).
 6. Antes de cerrar un cambio: casos borde y de regresión.
 
 ## Verificaciones manuales que complementan las pruebas

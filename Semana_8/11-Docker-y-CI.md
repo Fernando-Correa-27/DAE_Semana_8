@@ -17,7 +17,7 @@ Documento completo: `docs/decisiones-docker-ci.md`.
 - **SQLite**, que viene con Python. Sin servidor de base de datos, sin credenciales, sin migración
   inicial.
 - **Plantillas y CSS servidos por `runserver`**: sin `node`, sin bundler, sin artefactos de compilación.
-- **Una suite, un comando**: `python manage.py test` → **`Ran 324 tests ... OK`**.
+- **Una suite, un comando**: `python manage.py test` → **`Ran 339 tests ... OK`**.
 
 Docker no añade nada que falte para hacer el trabajo del laboratorio.
 
@@ -50,8 +50,10 @@ Ni `docker`, ni `pytest`, ni `coverage`. `requirements.txt` sigue con **4 línea
   forma consciente.
 - **El entorno no es reproducible por imagen.** Quien clone el repositorio necesita Python 3.14 y las
   cuatro dependencias; no basta con `docker run`.
-- **No hay despliegue**, y `DEBUG = True` con el `SECRET_KEY` de reserva siguen vigentes. Es correcto en un
-  aula e incorrecto fuera de ella (ver [[08-Seguridad]]).
+- **No hay despliegue**, y el laboratorio **arranca en modo desarrollo por defecto** (`DJANGO_DEBUG=1`), sin
+  HTTPS y sin servidor estático. Desde `a82978e` ya no hay secretos en el código ni valores fijos de
+  `DEBUG`: ambos salen del entorno y el arranque falla cerrado sin ellos. Es correcto en un aula e
+  incorrecto fuera de ella (ver [[08-Seguridad]] y [[12-Limitaciones-y-pendientes]]).
 
 ## Mitigaciones sin infraestructura
 

@@ -81,6 +81,16 @@ ALLOWED_HOSTS = _allowed_hosts()
 # below is the modern half of the same control.
 X_FRAME_OPTIONS = "DENY"
 CONTENT_SECURITY_POLICY = "default-src 'self'; frame-ancestors 'none'"
+# The contract viewer ships Swagger UI from a CDN, so it needs its own policy:
+# it keeps frame-ancestors 'none' but allows the CDN drf-spectacular uses.
+CONTENT_SECURITY_POLICY_DOCS = (
+    "default-src 'self'; frame-ancestors 'none'; "
+    "script-src 'self' https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data: https://cdn.jsdelivr.net; "
+    "font-src 'self' https://cdn.jsdelivr.net"
+)
+CSP_EXEMPT_PREFIXES = ("/api/docs/",)
 
 INSTALLED_APPS = [
     "django.contrib.auth",

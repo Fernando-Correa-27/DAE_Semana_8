@@ -74,7 +74,7 @@ no distingue mayúsculas), `page`.
 | **403** | Autenticado sin permiso: el agente o el lector escriben o borran; verbo desconocido. |
 | **404** | El recurso no existe, o `?page=` fuera de rango. |
 | **405** | Método HTTP no implementado en esa ruta. |
-| **500** | Fallo interno. Con `DEBUG = True` la página técnica de Django muestra detalles internos. |
+| **500** | Fallo interno. Con `DJANGO_DEBUG=1` (el valor por defecto del laboratorio) la página técnica de Django muestra detalles internos; con `DJANGO_DEBUG=0` se sirve `500.html`. |
 
 ## Semántica de la actualización
 

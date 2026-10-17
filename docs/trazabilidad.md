@@ -23,7 +23,7 @@
 >
 > **Evidencia de referencia (verificada por el coordinador sobre el repositorio actual):**
 >
-> - `python manage.py test` → **`Ran 324 tests ... OK`** (era 61 pruebas con 21 fallos al empezar).
+> - `python manage.py test` → **`Ran 339 tests ... OK`** (era 61 pruebas con 21 fallos al empezar; 324 antes de los arreglos de seguridad de `a82978e`).
 > - Línea base: **61 pruebas, 21 fallando** — 18 errores en `test_quizctl` y 3 fallos en
 >   `test_permissions`, por las Partes 2 y 3 sin implementar.
 > - `python manage.py check` → sin problemas.
@@ -37,9 +37,12 @@
 > | Parte 2 (`quizctl.py`) | R-API-21…29 🔴 → ✅ (implementado y con la suite en verde) |
 > | Parte 3 (`quiz/permissions.py`) | R-API-47…51 🔴 → ✅; R-API-53 🟡 → ✅; R-API-54 ⚪ → ✅ (decidido en ADR-0003) |
 > | Validación del filtro | R-VIE-08 ⚪ → ✅ (`?exam=` no numérico ahora da **400**, no se ignora) |
-> | Repositorio | R-REP-01 🟡 → ✅ (README reescrito), R-REP-07 🔴 → ✅ (324 OK), R-REP-13 🟡 → ✅ (existen `docs/` y 3 ADR) |
+> | Repositorio | R-REP-01 🟡 → ✅ (README reescrito), R-REP-07 🔴 → ✅ (339 OK), R-REP-13 🟡 → ✅ (existen `docs/` y 3 ADR) |
 > | Interfaz web | R-UI-01…R-UI-12, R-UI-14 y R-UI-T1…T7 🔴 → ✅ o 🟡, con la interfaz implementada y verificada en vivo |
-> | **Pendientes que siguen abiertos** | R-SER-08 (`question_count` en escrituras), R-SER-32/33/34, R-VIE-17/19/20/21, R-REP-03, R-REP-05, R-REP-12, R-REP-14, R-UI-11 (contraste, revisado a ojo sin herramienta), R-UI-07 (matriz por rol completa en la UI) |
+> | **Endurecimiento de configuración (`a82978e`)** | R-REP-03 🔴 → 🟡 **parcial**: ya **no** hay `SECRET_KEY` ni `DEBUG=True` fijos en el código (entorno → `.secret_key` generado; con `DEBUG` apagado el arranque falla cerrado), pero el laboratorio **sigue arrancando en desarrollo por defecto** y sin HTTPS. R-REP-05 🟡 → ✅ (`seed_quiz` solo imprime tokens con `--show-tokens`). R-API-20 🟡 → 🟡 **parcial**: el 500 con detalle técnico desaparece cuando `DJANGO_DEBUG=0` |
+> | **Cabeceras de seguridad** | `X_FRAME_OPTIONS = "DENY"` + CSP `default-src 'self'; frame-ancestors 'none'` solo en HTML (SUI-05 cerrado), con el `<script>` inline movido a `quiz/static/quiz/js/app.js` |
+> | **Cobertura nueva** | `quiz/tests/test_config_hardening.py` (15 pruebas): clave no publicada y generada, arranque que falla cerrado, cabeceras y salida de `seed_quiz` |
+> | **Pendientes que siguen abiertos** | R-SER-08 (`question_count` en escrituras), R-SER-32/33/34, R-VIE-17/19/20/21, R-REP-05 (rotación de tokens), R-REP-12, R-REP-14, R-UI-11 (contraste, revisado a ojo sin herramienta), R-UI-07 (matriz por rol completa en la UI), **SUI-03** (login sin límite de intentos, riesgo aceptado) |
 >
 > **Marcas añadidas:** 🟢 = implementado **y verificado con ejecución** (suite en verde o comprobación en
 > vivo). No se marca nada 🟢 sin esa evidencia.
@@ -55,6 +58,8 @@
 | `docs/frontera-ia.md` | Auditoría de la frontera del agente (R0/R1/R2) y del texto hostil |
 | `docs/revision-codigo.md` | Revisión de los commits de implementación: B1, I1–I9 y menores, con su evidencia |
 | `docs/decisiones-docker-ci.md` | Por qué no hay contenedores ni CI (cierra R-REP-14 como *fuera de alcance por decisión*) |
+| `docs/seguridad-interfaz.md` | Auditoría de la interfaz (22 hallazgos SUI) y el estado tras `a82978e`: SUI-01/02/04/05 cerrados, SUI-03 abierto |
+| `docs/seguridad.md` | Auditoría de seguridad inicial (SEC-01…SEC-22), de la que algunos hallazgos se cerraron en `a82978e` |
 
 > Cuando una decisión de arquitectura responda a una **pregunta abierta** de `docs/requisitos.md` §14,
 > esta matriz debe actualizarse en lugar de abrir una segunda vía. Hoy: **Q-02 y Q-03 están respondidas**
@@ -67,7 +72,7 @@
 ## 1. Resumen de cobertura
 
 > **Instantánea de la fase de análisis.** Los números de la tabla de abajo **ya no describen el
-> repositorio**: el resumen real de esta entrega es la suite en verde (**324 pruebas**) más las filas
+> repositorio**: el resumen real de esta entrega es la suite en verde (**339 pruebas**) más las filas
 > corregidas de §2 a §6. La tabla se conserva como registro del punto de partida.
 
 | Bloque | Requisitos | ✅ cubierto | 🟡 parcial | 🔴 pendiente | ⚪ decisión |
@@ -190,7 +195,7 @@
 | R-API-17 | Autenticado sin permiso → **403** | `quiz/permissions.py` (delegando en la tabla de `quiz/services.py:20-25`) | `test_permissions.py` + `test_http_matrix.py`; verificado en vivo: lector POST/DELETE → **403** | 🟢 cubierto |
 | R-API-18 | Método no permitido → **405** | `ModelViewSet` de DRF | *ninguna* → crear (`POST /api/exams/{id}/`) | 🟡 parcial |
 | R-API-19 | `Content-Type` no soportado → **415** | Parsers por defecto de DRF | *ninguna* → crear (`text/plain`) | 🟡 parcial |
-| R-API-20 | Fallo interno → **5xx** sin filtrar datos | `settings.py:10` `DEBUG=True` (**expone detalles**) | *ninguna*; requiere R-REP-03 | 🟡 parcial |
+| R-API-20 | Fallo interno → **5xx** sin filtrar datos | `DJANGO_DEBUG=0` deja de usar la página técnica de Django (con el valor por defecto `1` sigue mostrándola: es el modo laboratorio) | `test_config_hardening.py::StartupGuardTests` (el arranque depende de `DJANGO_DEBUG`) | 🟡 parcial |
 
 ### 4.2 Códigos de salida de `quizctl` (Parte 2 — implementada en `cf61a11`)
 
@@ -249,17 +254,17 @@
 |---|---|---|---|
 | R-REP-01 | `README.md` **reescrito**: puesta en marcha con `seed_quiz --password`, variables de entorno por nombre, las 4 partes, la interfaz, la **tabla de la API** y la tabla de códigos de error | Revisión documental; sigue los comandos en una máquina limpia | 🟢 cubierto (huedo I9 de la revisión corregido) |
 | R-REP-02 | `requirements.txt:1-4` (4 líneas, **intacto**) | Lectura del archivo + `pip install -r` | 🟢 cubierto |
-| R-REP-03 | `settings.py:9-10` (`SECRET_KEY` con reserva + `DEBUG=True`) — **sigue siendo inseguro fuera del aula** | Revisión de configuración | 🔴 pendiente (decisión consciente: ver `docs/decisiones-docker-ci.md` y el aviso del `README.md`) |
-| R-REP-04 | `.gitignore:1-7` | Lectura del archivo | ✅ cubierto |
-| R-REP-05 | `seed_quiz.py:66-72` **imprime** tokens, pero no los versiona | Revisión de `README.md`, `docs/` y notas: solo aparecen **nombres** de variables | 🟢 cubierto (esta matriz lo comprueba en todos los documentos escritos) |
+| R-REP-03 | **Endurecido en `a82978e`**: no hay `SECRET_KEY` ni `DEBUG` fijos en el código. Orden: `DJANGO_SECRET_KEY` → si no, `.secret_key` generado (ignorado por git) → con `DJANGO_DEBUG=0`, arranque con `ImproperlyConfigured`; `ALLOWED_HOSTS` viene de `DJANGO_ALLOWED_HOSTS` y también falla cerrado | `test_config_hardening.py::SecretKeyTests` + `::StartupGuardTests` | 🟡 **parcial**: el riesgo de la clave publicada está cerrado; sigue vigente que el laboratorio **arranca en desarrollo por defecto** y que con `DEBUG=0` falta servidor estático (ver `docs/decisiones-docker-ci.md` y el aviso del `README.md`) |
+| R-REP-04 | `.gitignore` incluye ahora también `.secret_key` | Lectura del archivo + `test_config_hardening.py::SecretKeyTests::test_secret_key_file_is_not_tracked_by_git` | 🟢 cubierto |
+| R-REP-05 | `seed_quiz.py` **ya no imprime** los tokens por defecto: solo con `--show-tokens`, y **nunca** la contraseña | `test_config_hardening.py::SeedOutputTests` (3 pruebas: sin flag, con flag, contraseña nunca impresa); revisión de `README.md`, `docs/` y notas: solo aparecen **nombres** de variables | 🟢 cubierto (la impresión es ahora opt-in) |
 | R-REP-06 | `config/`, `quiz/`, `agent/`, `quizctl.py`, `quiz/tests/` | Estructura del árbol | 🟢 cubierto |
-| R-REP-07 | `python manage.py test` | Ejecución real: **`Ran 324 tests ... OK`** (línea base: 61 pruebas, 21 fallando) | 🟢 cubierto |
+| R-REP-07 | `python manage.py test` | Ejecución real: **`Ran 339 tests ... OK`** (línea base: 61 pruebas, 21 fallando; 324 antes de `a82978e`) | 🟢 cubierto |
 | R-REP-08 | `README.md` (comando `spectacular`); `.gitignore:7` excluye `schema.yml`. **Contrato legible sin token: confirmado** | `test_api.py` (esquema) + verificado en vivo: `/api/schema/` y `/api/docs/` → **200 sin token**. **Q-11 queda cerrada** | 🟢 cubierto |
 | R-REP-09 | `AGENTS.md` §7; `README.md` (sección final) | Revisión de estilo | 🟢 cubierto |
 | R-REP-10 | `AGENTS.md`, `opencode.json:1-4` | Lectura | 🟢 cubierto |
 | R-REP-11 | `seed_quiz.py:11-34` (`get_or_create`), `:52-59` (borra y recarga) | `helpers.py:8-13` (`call_command("seed_quiz")` en varias clases de prueba) | 🟢 cubierto |
 | R-REP-12 | `quiz/migrations/0001_initial.py`; datos en `seed_quiz.py` | `python manage.py migrate` en BD vacía | 🟡 parcial (la base de datos de desarrollo existe y las pruebas pasan, pero no hay prueba que fije el esquema) |
-| R-REP-13 | `docs/` con 7 documentos + **`docs/adr/0001`, `0002`, `0003`** | Existencia de los ADR | 🟢 cubierto |
+| R-REP-13 | `docs/` con 10 documentos + **`docs/adr/0001`, `0002`, `0003`** + `docs/seguridad-interfaz.md` | Existencia de los ADR y de los informes | 🟢 cubierto |
 | R-REP-14 | Sin CI ni script de verificación | Decisión documentada en `docs/decisiones-docker-ci.md` | ➖ **fuera de alcance por decisión** (no es un fallo) |
 
 ---
@@ -290,7 +295,7 @@ y `test_services.py`.
 | R-UI-07 | `StaffRequiredMixin` consulta `services.may_use()`; la plantilla refleja la regla | `test_web.py::AccessTests` (403 por rol) | 🟡 parcial: hay un 403 global correctamente **probado**, pero no la matriz completa por rol que pedía ADR-0003 §verificación (el agente edita y no ve «Eliminar») |
 | R-UI-08 | `templates/403.html`; el POST inválido vuelve al formulario con errores | `test_web.py::SecurityAndAssetTests`, `test_web_review.py::SingleAnnouncementTests` | 🟢 cubierto (I1 corregido: un solo `role="alert"`) |
 | R-UI-09 | Estado vacío en los listados | `test_web_gaps.py::BrowserShapeTests` | 🟢 cubierto |
-| R-UI-10 | `quiz/templates/quiz/base.html` + `partials/` + `quiz/static/quiz/css/app.css`, sin CDN | `test_web.py::SecurityAndAssetTests` (el activo se sirve desde la app) | 🟢 cubierto |
+| R-UI-10 | `quiz/templates/quiz/base.html` + `partials/` + `quiz/static/quiz/css/app.css`, sin CDN. El `<script>` inline se movió a `quiz/static/quiz/js/app.js` para poder aplicar la CSP sin `unsafe-inline` | `test_web.py::SecurityAndAssetTests` (el activo se sirve desde la app) + `test_config_hardening.py::ResponseHeaderTests::test_no_inline_script_is_needed_by_the_policy` | 🟢 cubierto |
 | R-UI-11 | CSS con tokens, `:focus-visible`, `prefers-reduced-motion`, responsive | `test_web_review.py::SingleAnnouncementTests` y revisión de la hoja | 🟡 parcial: el contraste ≥ 4.5:1 está **revisado a ojo**, sin herramienta ni prueba que lo verifique (así lo admite el propio requisito) |
 | R-UI-12 | Sin JS obligatorio; los radios funcionan por `name` común | `test_web.py::QuestionCrudTests` | 🟢 cubierto |
 | R-UI-13 | Pruebas de UI repartidas en `test_web.py`, `test_web_review.py`, `test_web_gaps.py` | Los propios módulos | 🟢 cubierto |
@@ -301,7 +306,7 @@ y `test_services.py`.
 | R-UI-T4 | La UI usa el **ORM**, no la API por HTTP (ADR-0002) | `test_query_counts.py::QueryLayerTests` | 🟢 decidido y verificado |
 | R-UI-T5 | **Validador único** compartido por serializador y formset | `test_services.py::SameVerdictTests` (era I5: el fichero **no existía**) | 🟢 cubierto |
 | R-UI-T6 | La UI no expone acciones R2 ni borrados masivos | `test_web.py::AccessTests` | 🟢 cubierto |
-| R-UI-T7 | **Regresión:** los cuatro entregables siguen verdes tras tocar `settings.py` | Suite completa: `Ran 324 tests ... OK` | 🟢 cubierto |
+| R-UI-T7 | **Regresión:** los cuatro entregables siguen verdes tras tocar `settings.py` | Suite completa: `Ran 339 tests ... OK` | 🟢 cubierto |
 
 ---
 
@@ -336,13 +341,17 @@ y `test_services.py`.
 | 19 | El esquema es accesible sin token | `test_api.py` + verificado en vivo | R-VIE-18, R-REP-08 | ✅ cerrada |
 | 20 | Método desconocido → denegado por defecto | `test_services.py::DenyByDefaultTests` | R-API-53 | ✅ cerrada |
 | 21 | El agente puede/no puede modificar exámenes | `test_http_matrix.py::VerbAndRoleMatrixTests` | R-API-54, A-06 | ✅ cerrada (ADR-0003) |
-| 22 | Arranque con `DEBUG=False` y sin `DJANGO_SECRET_KEY` | — | R-REP-03 | 🔴 **abierta** (ver `docs/decisiones-docker-ci.md`) |
+| 22 | Arranque con `DEBUG=False` y sin `DJANGO_SECRET_KEY` (y sin `DJANGO_ALLOWED_HOSTS`) | `test_config_hardening.py::StartupGuardTests` | R-REP-03 | ✅ **cerrada** (`a82978e`: el arranque falla con `ImproperlyConfigured`; antes dependía de una decisión sin tomar) |
 | 23 | `SpectacularAPIView` acepta o no token → fijar la postura del contrato | `test_api.py` + verificado en vivo | R-VIE-18, R-REP-08, Q-11 | ✅ cerrada |
 | 24 | **Frontera de confianza** (sesión ↔ API, token ↔ UI, CSRF) | `test_web.py::FrontierTests`, `test_http_matrix.py::SessionTokenFrontierTests` | R-UI-T3 | ✅ cerrada |
-| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | Suite completa (324 OK) | R-UI-T7 | ✅ cerrada |
+| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | Suite completa (339 OK) | R-UI-T7 | ✅ cerrada |
 | 26 | Veredicto RN-01/RN-02 compartido: la misma pregunta inválida se rechaza por API **y** por formulario | `test_services.py::SameVerdictTests` | R-UI-T5 | ✅ cerrada |
 | 27 | Matriz completa por rol **en la interfaz** (el agente edita y no ve «Eliminar») | `test_permissions.py` | R-UI-07, ADR-0003 §verificación | 🔴 **abierta** (parcial: hoy hay un 403 global probado) |
 | 28 | Contraste ≥ 4.5:1 verificado con herramienta | `test_web.py` | R-UI-11 | 🔴 **abierta** (hoy es revisión a ojo) |
+| 29 | Ninguna credencial en el código: clave no publicada, generada y fuera de git | `test_config_hardening.py::SecretKeyTests` | R-REP-03, R-REP-05 | ✅ **cerrada** (`a82978e`) |
+| 30 | `seed_quiz` sin tokens en claro salvo `--show-tokens`, y nunca la contraseña | `test_config_hardening.py::SeedOutputTests` | R-REP-05, SUI-04 | ✅ **cerrada** (`a82978e`) |
+| 31 | Cabeceras de seguridad de la interfaz: `X-Frame-Options: DENY` y CSP, **solo** en HTML | `test_config_hardening.py::ResponseHeaderTests` | SUI-05, R-UI-10 | ✅ **cerrada** (`a82978e`) |
+| 32 | El login de la interfaz limita los intentos fallidos | — | SUI-03 | 🔴 **abierta** (riesgo aceptado del laboratorio; no hay enumeración de usuarios) |
 
 ---
 
@@ -353,7 +362,7 @@ y `test_services.py`.
 
 1. ~~`backend-django` implementa `quizctl.exit_code_for` + `build_question_payload`~~ → **hecho** (`cf61a11`).
 2. ~~`seguridad` + `backend-django` implementan `AgentPermission`~~ → **hecho** (`cf61a11`, tabla compartida en ADR-0003).
-3. ~~`tester` ejecuta `python manage.py test` y confirma **R-REP-07**~~ → **hecho**: `Ran 324 tests ... OK`.
+3. ~~`tester` ejecuta `python manage.py test` y confirma **R-REP-07**~~ → **hecho**: `Ran 339 tests ... OK`.
 4. `tester` cubre los huecos de §7 → **hecho en su mayor parte** (ficheros nuevos en `7992f2a`); quedan
    cuatro abiertos, listados al final de §7.
 5. `arquitecto` decide Q-04, Q-05, Q-06 → **Q-05 y Q-06 resueltas** (400 en `?exam=` no entero; el agente
@@ -371,13 +380,14 @@ y `test_services.py`.
 - **Fase A/B (lo que sigue):** no se había ejecutado ninguna prueba en el momento de escribir el
   documento; los estados `✅ cubierto` significaban *prueba presente*, no *prueba verde*.
 - **Estado actual (añadido al cerrar la implementación):** `python manage.py test` se ejecutó de verdad
-  y devolvió **`Ran 324 tests ... OK`**, y la matriz HTTP y la interfaz se comprobaron en vivo contra el
+  y devolvió **`Ran 339 tests ... OK`**, y la matriz HTTP y la interfaz se comprobaron en vivo contra el
   servidor. Ese es el fundamento de las marcas 🟢 de las filas corregidas.
 - Las citas `archivo:línea` se obtuvieron **leyendo** el repositorio; son verificables.
 - **No se ha inventado ningún requisito del campus**: el texto oficial de la rúbrica no está en el
   repositorio. Los 4 criterios proceden del enunciado de la misión. **Esto sigue vigente.**
-- **No hay secretos** en este documento. `seed_quiz` imprime tokens por terminal (`seed_quiz.py:66-72`);
-  aquí solo se menciona el mecanismo, nunca un valor.
+- **No hay secretos** en este documento. `seed_quiz` ya **no** imprime los tokens salvo que se pida con
+  `--show-tokens` (`a82978e`); aquí solo se menciona el mecanismo, nunca un valor. Lo mismo con
+  `DJANGO_SECRET_KEY`: solo se nombra la variable, nunca su valor ni la clave generada en `.secret_key`.
 - El proyecto de referencia S07 se ha usado **solo como lectura** para describir el patrón de UI del curso
   (`blog/views.py`, `blog/templates/…`, `blog/static/css/style.css`, `config/settings.py`). **No se ha
   escrito en él.**

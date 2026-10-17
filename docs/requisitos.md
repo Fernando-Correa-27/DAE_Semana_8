@@ -13,11 +13,16 @@
 >
 > **Hecho comprobado (coordinador, repositorio en el estado actual):**
 >
-> - `python manage.py test` → **`Ran 324 tests ... OK`**. Las Partes 2 y 3 están implementadas
+> - `python manage.py test` → **`Ran 339 tests ... OK`**. Las Partes 2 y 3 están implementadas
 >   (commits `cf61a11`); la interfaz web existe (`7c87fd9`); la revisión se corrigió y se amplió la
->   cobertura (`7992f2a`).
+>   cobertura (`7992f2a`); los hallazgos críticos de configuración se cerraron (`a82978e`, que subió la
+>   suite de 324 a 339 con `quiz/tests/test_config_hardening.py`).
 > - **R-UI-02** y **R-UI-04** están **completados** (tabla de preguntas con filtro por examen y búsqueda
 >   por texto, con URL compartible). Ver la fila de cada uno en §8.1.
+> - **R-REP-03 ha cambiado de estado en `a82978e`:** ya no hay `SECRET_KEY` ni `DEBUG` fijos en el código
+>   (ver la fila en §7.1 y el detalle en `docs/trazabilidad.md` §5). **Lo que sigue abierto:** el login de
+>   la interfaz no limita los intentos (SUI-03, riesgo aceptado del laboratorio) y con `DJANGO_DEBUG=0`
+>   `runserver` deja de servir `/static/`.
 > - Los requisitos que estaban en 🔴 o ⚪ y que el backend resolvió (R-API-21…29, R-API-47…53,
 >   R-VIE-08, R-REP-07) están actualizados en [`docs/trazabilidad.md`](trazabilidad.md).
 >
@@ -334,18 +339,20 @@ que el resultado sea correcto con cualquiera de ellas:
 |---|---|---|---|---|
 | R-REP-01 | `README.md` documenta puesta en marcha, las 4 partes y la tabla de códigos de salida | Un lector puede ejecutar los comandos del README desde cero | HECHO (`README.md:10-31`) | Imprescindible |
 | R-REP-02 | `requirements.txt` fija las 4 dependencias del laboratorio | `Django>=5.2,<7`, `djangorestframework>=3.16`, `drf-spectacular>=0.28`, `requests>=2.32` | HECHO | Imprescindible |
-| R-REP-03 | **No se despliega con `DEBUG=True` ni con la clave de reserva** | Fuera de desarrollo, `DJANGO_SECRET_KEY` es obligatoria y `DEBUG=False` | HECHO que es **inseguro hoy** (`settings.py:9-10`) | Imprescindible (riesgo, ver R-9) |
-| R-REP-04 | `.gitignore` excluye secretos y artefactos | `.env`, `db.sqlite3`, `agent_audit.jsonl`, `schema.yml`, `.venv/`, `__pycache__/` | HECHO (`.gitignore:1-7`) | Imprescindible |
-| R-REP-05 | Ningún token ni clave versionado | `grep` de `Token.objects…key`/valores de token en el repo → 0 coincidencias fuera de código de seed | HECHO por lectura; **verificación con `rg` pendiente** | Imprescindible |
+| R-REP-03 | **No se despliega con `DEBUG=True` ni con la clave de reserva** | Fuera de desarrollo, `DJANGO_SECRET_KEY` es obligatoria y `DEBUG=False` | HECHO que era **inseguro** (`settings.py:9-10`). **Actualizado en `a82978e`:** no hay ya ninguna clave en el código (entorno → `.secret_key` generado; con `DJANGO_DEBUG=0` el arranque falla con `ImproperlyConfigured`) y `DEBUG`/`ALLOWED_HOSTS` salen del entorno. Cubierto por `quiz/tests/test_config_hardening.py::SecretKeyTests` y `::StartupGuardTests` | Imprescindible (riesgo, ver R-9) |
+| R-REP-04 | `.gitignore` excluye secretos y artefactos | `.env`, `db.sqlite3`, `agent_audit.jsonl`, `schema.yml`, `.secret_key`, `.venv/`, `__pycache__/` | HECHO (`.gitignore:1-8`) | Imprescindible |
+| R-REP-05 | Ningún token ni clave versionado, y **sin imprimirse por defecto** | `grep` de valores de token/clave en el repo → 0 coincidencias; `seed_quiz` **solo** imprime tokens con `--show-tokens` y nunca la contraseña | HECHO por lectura y **verificado**: `test_config_hardening.py::SeedOutputTests`; `.gitignore` cubre `.secret_key` | Imprescindible |
 | R-REP-06 | Estructura de paquetes coherente | `config/` (proyecto), `quiz/` (API), `agent/` (frontera), `quizctl.py` (cliente), `quiz/tests/` (pruebas) | HECHO | Imprescindible |
-| R-REP-07 | `python manage.py test` deja los 4 módulos en verde | `test_api`, `test_agent`, `test_quizctl`, `test_permissions` → todos OK | Especificado; **no ejecutado en esta fase** | Imprescindible |
+| R-REP-07 | `python manage.py test` deja los 4 módulos en verde | `test_api`, `test_agent`, `test_quizctl`, `test_permissions` → todos OK | HECHO: **`Ran 339 tests ... OK`** (324 antes de `a82978e`) | Imprescindible |
 | R-REP-08 | El contrato es regenerable y ** legible sin token** (lo consume `agent/gateway.py:52` sin credencial) | `python manage.py spectacular --file schema.yml` produce el esquema **y** `GET /api/schema/?format=json` sin `Authorization` → 200 | PENDIENTE de verificación → Q-11 | Imprescindible |
 | R-REP-09 | Convenciones del curso | Código, nombres y comentarios en inglés; entregables en español; PEP 8 | HECHO (`AGENTS.md`, `README.md:117-119`) | Imprescindible |
 | R-REP-10 | Protocolo de equipo documentado | `AGENTS.md` + `opencode.json` presentes | HECHO | Recomendado |
 | R-REP-11 | Datos de arranque reproducibles e idempotentes | `seed_quiz` se puede repetir y conserva los tokens | HECHO (`seed_quiz.py:11-27`) | Imprescindible |
 | R-REP-12 | Migraciones solo de esquema, sin datos | `0001_initial` crea tablas; `seed_quiz` carga datos aparte | HECHO | Recomendado |
-| R-REP-13 | Documentación de arquitectura cuando haya decisión nueva | Un ADR si se adoptan plantillas/sesiones o si se cambia una regla de la API | **PENDIENTE** (no existe `docs/adr/`) | Recomendado |
-| R-REP-14 | CI o guía de verificación reproducible | Alternativa mínima: script documentado que ejecute `migrate` + `seed_quiz` + `test` | **PENDIENTE** (no hay CI) | Opcional |
+| R-REP-13 | Documentación de arquitectura cuando haya decisión nueva | Un ADR si se adoptan plantillas/sesiones o si se cambia una regla de la API | HECHO: existen `docs/adr/0001`, `0002` y `0003`, y la entrega se documenta en `docs/` y `Semana_8/` | Recomendado |
+| R-REP-14 | CI o guía de verificación reproducible | Alternativa mínima: script documentado que ejecute `migrate` + `seed_quiz` + `test` | PENDIENTE (no hay CI; decisión documentada en `docs/decisiones-docker-ci.md`) | Opcional |
+| **R-REP-15** | **Nuevo (`a82978e`):** la interfaz emite cabeceras anti-clickjacking y la salida de `seed_quiz` es **opt-in** | Toda respuesta HTML lleva `X-Frame-Options: DENY` y `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'`; la API JSON y `/static/` **no** llevan CSP; `seed_quiz` no imprime ningún valor de token sin `--show-tokens` | HECHO y probado: `quiz/tests/test_config_hardening.py::ResponseHeaderTests` y `::SeedOutputTests` | Imprescindible (cierra SUI-04 y SUI-05) |
+| **R-REP-16** | **Nuevo (`a82978e`):** el arranque **falla cerrado** fuera de desarrollo | Con `DJANGO_DEBUG=0` y sin `DJANGO_SECRET_KEY` o sin `DJANGO_ALLOWED_HOSTS`, `manage.py` aborta con `ImproperlyConfigured` | HECHO y probado: `quiz/tests/test_config_hardening.py::StartupGuardTests` | Imprescindible |
 
 ### 7.2 Bloque B — Tabla de API / interfaz (mejora adicional: §8)
 
@@ -411,7 +418,7 @@ solo "repositorio", este bloque no aporta puntaje y es **recomendado**, no impre
 | R-UI-10 | Plantilla `base.html` + partials + `quiz/static/quiz/css/style.css`, **sin CDN** | Las vistas extienden `base.html`; la hoja se sirve con `DEBUG=False` y sin internet | Recomendado |
 | R-UI-11 | Accesibilidad como parte del CSS: `:focus-visible`, contraste ≥ 4.5:1, navegación por tabulador sin trampas, `prefers-reduced-motion` | Revisión de plantilla + hoja; ningún `:focus { outline: none }` | Recomendado |
 | R-UI-12 | La UI **funciona sin JavaScript** | Con el JS deshabilitado se pueden listar, crear, editar y borrar | Recomendado |
-| R-UI-13 | Pruebas de la UI | `quiz/tests/test_ui.py` con el patrón de S07 (`test_front_page`, `test_auth`, `test_crud`) | Recomendado |
+| R-UI-13 | Pruebas de la UI | Los módulos reales de la UI (`test_web.py`, `test_web_review.py`, `test_web_gaps.py`) más `test_config_hardening.py` para sus cabeceras de seguridad | Recomendado |
 | R-UI-14 | Sin `django.contrib.admin` | `/admin/` no existe o da 404: **no hay una segunda vía de escritura** que esquive RN-01/RN-02 | Imprescindible *si* la UI entra en alcance |
 
 > **✅ Marcados = completados y verificados.** Evidencia:
@@ -466,14 +473,14 @@ implementar R-UI-01…14:
 ### 10.1 Imprescindible (bloquea la entrega del laboratorio)
 
 > **Estado 2026-10-16: T-IMP-1 a T-IMP-4 están completados** (`cf61a11`, `7992f2a`; suite en verde con
-> 324 pruebas). T-IMP-5 a T-IMP-8 se resuelven o se registran abajo. La columna *Estado* es nueva.
+> 339 pruebas tras `a82978e`). T-IMP-5 a T-IMP-8 se resuelven o se registran abajo. La columna *Estado* es nueva.
 
 | # | Tarea | Requisitos | Depende de | Estado |
 |---|---|---|---|---|
 | T-IMP-1 | Implementar `quizctl.exit_code_for` (mapeo de estados → códigos 0–6) | R-API-21…26 | — | ✅ Completado (`quizctl.py:48-63`) |
 | T-IMP-2 | Implementar `quizctl.build_question_payload` (`:ok` final, sin validar) | R-API-27…29 | — | ✅ Completado (`quizctl.py:66-91`) |
 | T-IMP-3 | Implementar `quiz.permissions.AgentPermission` (4 ramas de la regla + denegar por defecto) | R-API-47…53 | — | ✅ Completado (`quiz/permissions.py` + tabla en `quiz/services.py:20-25`) |
-| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 | ✅ Completado: `Ran 324 tests ... OK` |
+| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 | ✅ Completado: `Ran 339 tests ... OK` |
 | T-IMP-5 | **Decidir** el contrato de `question_count` en respuestas de escritura | R-SER-08 | — | 🟡 **Abierto.** No se ha tocado el serializador entregado; sigue faltando la clave en 201/200 |
 | T-IMP-6 | **Decidir** el comportamiento de `?exam=` no numérico (ignorar vs 400) | R-VIE-08 | — | ✅ **Resuelto:** ahora da **400** nombrando el parámetro (`quiz/views.py:12-27`) |
 | T-IMP-7 | **Decidir** si el agente puede modificar exámenes (PUT/PATCH) | R-API-54 | — | ✅ **Resuelto** por ADR-0003: el agente lee, crea y modifica, **nunca borra** |
@@ -489,8 +496,10 @@ implementar R-UI-01…14:
 | T-REC-4 | `OrderingFilter` documentado | R-VIE-17 |
 | T-REC-5 | Documentar que el contrato es público y por qué (romperlo rompe la pasarela) | R-VIE-18, R-REP-08 |
 | T-REC-6 | ADR si se adoptan plantillas/sesiones/UI | R-REP-13, R-UI-T1…T6 |
-| T-REC-7 | `DEBUG`/`SECRET_KEY` con conmutador por entorno | R-REP-03 |
+| T-REC-7 | `DEBUG`/`SECRET_KEY` con conmutador por entorno | R-REP-03 → **✅ cubierto** en `a82978e` |
 | T-REC-8 | Pruebas de UI si entra en alcance | R-UI-12 → **✅ cubierto**: los módulos reales son `test_web.py`, `test_web_review.py`, `test_web_gaps.py`, `test_services.py` (no existe `test_ui.py`, nombre que se usó en la fase de análisis) |
+| T-REC-9 | Pruebas que fijan el endurecimiento de configuración | R-REP-15, R-REP-16 → **✅ cubierto** en `a82978e` con `quiz/tests/test_config_hardening.py` |
+| T-REC-10 | Límite de intentos en el login de la interfaz | SUI-03 → 🔴 **abierto** (riesgo aceptado del laboratorio; no hay enumeración de usuarios) |
 
 ### 10.3 Opcional
 
@@ -542,7 +551,7 @@ implementar R-UI-01…14:
 | ID | Riesgo | Prob. | Impacto | Mitigación / requisito |
 |---|---|---|---|---|
 | R-01 | **`AgentPermission` devuelve `True`**: con el token del agente se puede **borrar** (`permissions.py:20`) | Cierta (código abierto) | **Crítico** | T-IMP-3 (R-API-49/50) + `test_permissions` |
-| R-02 | `DEBUG=True` y `SECRET_KEY` con reserva en el código (`settings.py:9-10`) | Cierta | Alto | R-REP-03, T-REC-7; documentar «solo desarrollo» |
+| R-02 | `DEBUG=True` y `SECRET_KEY` con reserva en el código (`settings.py:9-10`) | Cierta | Alto | R-REP-03, T-REC-7; documentar «solo desarrollo». **Actualizado en `a82978e`:** ya no hay clave ni `DEBUG` fijos; ambos salen del entorno y el arranque falla cerrado sin ellos |
 | R-03 | Un 500 en `DEBUG=True` puede filtrar estructura interna | Media | Medio | R-REP-03 |
 | R-04 | **`question_count` no aparece** en respuestas de escritura | Alta | Medio | R-SER-08 / Q-04 |
 | R-05 | `?exam=` no numérico se ignora en silencio | Alta | Bajo | R-VIE-08 / Q-05 |
@@ -555,6 +564,8 @@ implementar R-UI-01…14:
 | R-12 | SQLite: conclusiones de rendimiento/escala no extrapolables | Cierta | Bajo | Documentar el alcance del laboratorio |
 | R-13 | Sin CI, la calidad depende de que alguien ejecute las pruebas | Cierta | Medio | R-REP-14 (opcional) |
 | R-14 | La rúbrica real puede pedir cosas no recogidas aquí | Media | Medio | Q-01 antes de cerrar la entrega |
+| R-15 | **Login de la interfaz sin límite de intentos** (SUI-03): fuerza bruta contra la contraseña del profesorado | Cierta | Medio | Aceptado en el laboratorio. Mitigante parcial ya presente: **no hay enumeración de usuarios** (mensaje genérico idéntico exista o no la cuenta). Documentado en [[Semana_8/12-Limitaciones-y-pendientes]] |
+| R-16 | **`is_correct` visible para cualquier token autenticado** en la API: la solución de cada pregunta se lee sin ser del profesorado (SEC-08 / SUI-09) | Cierta | Medio | Sin corregir: requiere decidir entre serializadores de lectura separados o documentarlo como decisión consciente. **Cerrado solo para la interfaz** (403 a no `is_staff`) |
 
 ---
 
@@ -587,3 +598,5 @@ implementar R-UI-01…14:
 - [x] Prioriza, y lista dependencias, ambigüedades, riesgos y preguntas abiertas.
 - [x] No afirma que ninguna prueba se haya ejecutado en esta fase.
 - [x] Trazabilidad requisito → implementación → prueba en `docs/trazabilidad.md`.
+- [x] **Actualización `a82978e`:** requisitos y cifras al día (339 pruebas), con los requisitos nuevos
+      **R-REP-15** y **R-REP-16** y los riesgos **R-15** y **R-16** añadidos.

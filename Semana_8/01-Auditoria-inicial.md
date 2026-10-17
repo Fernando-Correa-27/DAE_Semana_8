@@ -27,7 +27,7 @@ documento propio**: ni `AGENTS.md`, ni `opencode.json`, ni definiciones de agent
 | Momento | Resultado |
 |---|---|
 | Antes de empezar | **61 pruebas, 21 fallando**: 18 errores en `test_quizctl` y 3 fallos en `test_permissions`, por las Partes 2 y 3 sin implementar |
-| Al cierre | **`Ran 324 tests ... OK`** |
+| Al cierre | **`Ran 339 tests ... OK`** (324 antes de `a82978e`) |
 
 `test_api` y `test_agent` pasaban desde el principio; el hueco estaba íntegro en los dos entregables
 pendientes.
@@ -36,7 +36,7 @@ pendientes.
 
 | # | Riesgo |
 |---|---|
-| R1 | `SECRET_KEY` con valor de reserva y `DEBUG = True`: inviable fuera del aula |
+| R1 | `SECRET_KEY` con valor de reserva y `DEBUG = True`: inviable fuera del aula — **resuelto en `a82978e`**, ver [[08-Seguridad]] |
 | R2 | Permisos sin implementar: cualquier token autenticado podía **borrar** |
 | R3 | Frontera del agente: riesgo de *prompt injection* si se relajaba la validación |
 | R4 | SQLite: las conclusiones de rendimiento y escala son orientativas |

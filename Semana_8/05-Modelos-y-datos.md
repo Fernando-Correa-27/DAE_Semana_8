@@ -88,6 +88,7 @@ la frontera del agente la trata como **dato** y no como orden: buscar «IGNORA»
 
 ## Secretos
 
-Ni tokens, ni contraseñas, ni claves en el código. `DJANGO_SECRET_KEY` viene del entorno y tiene un valor
-de reserva pensado **solo para el aula**. `.env`, `db.sqlite3` y `agent_audit.jsonl` están ignorados por
-git.
+Ni tokens, ni contraseñas, ni claves en el código. `DJANGO_SECRET_KEY` viene del entorno; si no está y se
+está en desarrollo, la clave se **genera** en `.secret_key` (ignorado por git) y nunca se imprime. Desde
+`a82978e`, `seed_quiz` **solo** muestra los tokens si se pide con `--show-tokens`. `.env`, `db.sqlite3`,
+`.secret_key` y `agent_audit.jsonl` están ignorados por git.

@@ -19,6 +19,30 @@ Siguiente: backend-django (SUI-01, SUI-02, SUI-03, SUI-05), devops (SUI-08),
 
 ---
 
+## Estado tras la corrección (commit `a82978e`)
+
+> **Actualización del documentador, tras el commit `a82978e` (`fix: cerrar hallazgos críticos de seguridad y
+> documentar la entrega`).** El informe de abajo **no se reescribe**: conserva la auditoría tal como se
+> escribió. Esta sección solo refleja el estado verificado después de los arreglos. Verificado por el
+> coordinador: `python manage.py check` sin problemas y `python manage.py test` → **`Ran 339 tests ... OK`**
+> (antes 324; el fichero nuevo es `quiz/tests/test_config_hardening.py`, 15 pruebas).
+
+| Hallazgo | Severidad | Estado tras `a82978e` | Cómo se cerró |
+|---|---|---|---|
+| **SUI-01** · `SECRET_KEY` de reserva | Crítica | ✅ **CERRADO** | Ya **no hay ninguna clave en el código**. Orden de resolución: `DJANGO_SECRET_KEY` del entorno → si no hay, se lee o se **genera una clave aleatoria** en `.secret_key` (ignorado por git, permisos de solo propietario cuando el sistema los permite) → si `DJANGO_DEBUG` está apagado y no hay variable de entorno, arranque con `ImproperlyConfigured`. **La clave nunca se imprime.** Fijado en `quiz/tests/test_config_hardening.py::SecretKeyTests` |
+| **SUI-02** · `DEBUG=True` fijo y `ALLOWED_HOSTS` abiertos | Crítica | ✅ **CERRADO** | `DEBUG` se controla con `DJANGO_DEBUG` (por defecto `"1"`, el laboratorio sigue igual) y `ALLOWED_HOSTS` sale de `DJANGO_ALLOWED_HOSTS` separada por comas; sin ella y con `DEBUG` apagado el arranque **falla cerrado** con `ImproperlyConfigured`. Con `DEBUG` apagado la plantilla `500.html` deja de ser protección muerta. Fijado en `test_config_hardening.py::StartupGuardTests` |
+| **SUI-04** · `seed_quiz` imprime los tokens | Media | ✅ **CERRADO** | La impresión es ahora **opt-in**: los tokens solo salen con `--show-tokens`; sin esa opción el comando resume los datos cargados y explica cómo obtenerlos. `--password` **nunca** imprime la contraseña. Fijado en `test_config_hardening.py::SeedOutputTests` |
+| **SUI-05** · sin cabeceras anti-clickjacking | Media | ✅ **CERRADO** | `X_FRAME_OPTIONS = "DENY"` y `XFrameOptionsMiddleware`. Además se añadió una CSP `default-src 'self'; frame-ancestors 'none'` emitida **solo** en respuestas HTML por el nuevo `config/middleware.py`: la API JSON y `/static/` no la llevan. Para poder usar la CSP sin `unsafe-inline` hubo que mover el `<script>` inline de `base.html` a `quiz/static/quiz/js/app.js`. Fijado en `test_config_hardening.py::ResponseHeaderTests` |
+| **SUI-03** · login sin límite de intentos | Alta | 🟠 **ABIERTO / riesgo aceptado** | **No se ha corregido.** Se mantiene documentado como riesgo aceptado del laboratorio: el login de `/acceso/` no aplica ninguna política de intentos (ni retardo, ni bloqueo, ni registro). Mitigante parcial ya presente y verificado: **no hay enumeración de usuarios** — el mensaje de fallo es genérico e idéntico exista o no la cuenta. Quien lo asuma tiene que saber que sigue abierto |
+
+**Lo que sigue abierto y no se presenta como resuelto:** SUI-03 (arriba), SUI-06 (CSP más restrictiva que la
+implementada: no hay `script-src`/`style-src`/`form-action`/`base-uri` explícitos), SUI-07 (`Cache-Control`),
+SUI-08 (ajustes `SECURE_*`, HSTS, caducidad de sesión), SUI-09 (`is_correct` expuesto a cualquier token
+autenticado por la API), SUI-10 (la interfaz no audita acciones), SUI-11 a SUI-22, y los riesgos de
+`docs/seguridad.md` que este commit **no** toca.
+
+---
+
 ## 0. Alcance, método y límites
 
 ### 0.1 Qué se revisó
@@ -37,7 +61,7 @@ Siguiente: backend-django (SUI-01, SUI-02, SUI-03, SUI-05), devops (SUI-08),
 ### 0.2 Entorno verificado (hecho comprobado)
 
 - Python 3.14.4 · Django **5.2.18** · djangorestframework **3.18.3** · drf-spectacular **0.30.0** · requests **2.34.2**.
-- `python manage.py test` → **Found 324 test(s) … Ran 324 tests … OK** (ejecutado en esta auditoría).
+- `python manage.py test` → **Found 324 test(s) … Ran 324 tests … OK** (ejecutado en esta auditoría). *Es la cifra de esta auditoría; tras `a82978e` son **339** (ver la sección de estado de arriba).*
 - Servidor `runserver --noreload` escuchando en `127.0.0.1:8000`. No se lanzó ningún servidor nuevo ni se detuvo el existente.
 - Datos en la BD de desarrollo: 2 exámenes, 10 preguntas, 36 opciones; usuarios `profe` (staff), `agente` (grupo «agente»), `lector`, `alumno`. Invariante verificado en base de datos: **10/10 preguntas con exactamente una opción correcta y ≥2 opciones**.
 
@@ -1079,7 +1103,7 @@ Además, las pruebas **afirman** los controles, no solo los esquivan:
 (deny-by-default), `test_agent.py` (el prompt nunca lleva la credencial, el texto
 hostil no borra nada, la aprobación caduca si el objetivo cambia).
 
-Y `python manage.py test` → **324 tests, OK** en esta auditoría.
+Y `python manage.py test` → **324 tests, OK** en esta auditoría (hoy **339**, ver la sección de estado).
 
 **Matiz honesto (→ SUI-14):** el runner de pruebas de Django **no** aplica CSRF
 por defecto, así que la mayoría de las pruebas web **no** detectarían la

@@ -11,6 +11,7 @@ Volver al [[00-Indice]] · Anterior: [[09-Pruebas-y-resultados]] · Siguiente: [
 | `cf61a11` | `feat: implementar partes 2 y 3 del laboratorio` | **Parte 2**: `quizctl.exit_code_for` y `build_question_payload`. **Parte 3**: la regla de roles en el servidor |
 | `7c87fd9` | `feat: desarrollar la interfaz de gestion de examenes` | Interfaz web completa: vistas, formularios, rutas, mixin de acceso, plantillas, CSS, y los ajustes de `settings.py` que hacen falta |
 | `7992f2a` | `test: ampliar cobertura y corregir hallazgos de la revision` | Corrección de los hallazgos de `docs/revision-codigo.md` y siete módulos de prueba nuevos |
+| `a82978e` | `fix: cerrar hallazgos criticos de seguridad y documentar la entrega` | Cierra SUI-01, SUI-02, SUI-04 y SUI-05 (configuración sin secretos en el código, arranque que falla cerrado, `seed_quiz --show-tokens`, `X-Frame-Options` + CSP en HTML) y añade `test_config_hardening.py` |
 
 ## Qué cambió en cada fase
 
@@ -52,6 +53,31 @@ Volver al [[00-Indice]] · Anterior: [[09-Pruebas-y-resultados]] · Siguiente: [
   `test_query_counts.py`, `test_web_gaps.py` y `test_web_review.py`.
 - **61 → 324 pruebas, todas en verde.**
 
+### `a82978e` — cierre de los hallazgos críticos de seguridad
+
+Mensaje: `fix: cerrar hallazgos criticos de seguridad y documentar la entrega`.
+
+- `config/settings.py`: **fuera toda credencial del código**. Orden: `DJANGO_SECRET_KEY` del entorno → si
+  no hay, se lee o se genera una clave aleatoria en `.secret_key` (ignorado por git) → con
+  `DJANGO_DEBUG=0` y sin variable de entorno, arranque con `ImproperlyConfigured`.
+- `DEBUG` pasa a depender de `DJANGO_DEBUG` (por defecto `"1"`, el laboratorio sigue igual) y
+  `ALLOWED_HOSTS` de `DJANGO_ALLOWED_HOSTS` separada por comas, también con fallo cerrado.
+- `X_FRAME_OPTIONS = "DENY"` y `XFrameOptionsMiddleware`, más una CSP
+  `default-src 'self'; frame-ancestors 'none'` emitida **solo en respuestas HTML** por el nuevo
+  `config/middleware.py`.
+- El `<script>` inline de `quiz/templates/quiz/base.html` se mueve a
+  `quiz/static/quiz/js/app.js`, para poder aplicar la CSP sin `unsafe-inline`.
+- `seed_quiz`: los tokens **solo** se imprimen con `--show-tokens`; `--password` nunca imprime la
+  contraseña.
+- `.gitignore` añade `.secret_key`.
+- Nuevo `quiz/tests/test_config_hardening.py` (15 pruebas).
+- README y documentación actualizados con el estado real.
+- **324 → 339 pruebas, todas en verde.**
+
+### Lista final de commits de la entrega
+
+`5bdd1fa` (previo) → `ca04610` → `cf61a11` → `7c87fd9` → `7992f2a` → `a82978e`.
+
 ## Higiene del repositorio
 
 `.gitignore` excluye:
@@ -64,10 +90,11 @@ db.sqlite3
 .env
 agent_audit.jsonl
 schema.yml
+.secret_key
 ```
 
-**Ningún token, contraseña ni clave está versionado.** `seed_quiz` los imprime por terminal; la
-documentación solo menciona **nombres** de variables.
+**Ningún token, contraseña ni clave está versionado.** Desde `a82978e`, `seed_quiz` tampoco los imprime
+salvo que se pida con `--show-tokens`; la documentación solo menciona **nombres** de variables.
 
 `requirements.txt` **intacto** con sus 4 líneas: ninguna dependencia añadida durante el trabajo.
 

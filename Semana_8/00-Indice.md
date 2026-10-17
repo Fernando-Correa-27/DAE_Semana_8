@@ -21,7 +21,7 @@ una interfaz web de gestión para el profesorado.
 | [[06-API-y-codigos-HTTP]] | Tabla de endpoints y matriz de códigos verificados |
 | [[07-Interfaz-grafica]] | Decisiones de diseño, pantallas y cómo entrar |
 | [[08-Seguridad]] | Qué se resolvió y qué sigue vigente |
-| [[09-Pruebas-y-resultados]] | 324 pruebas en verde, qué cubre cada fichero y la matriz de códigos |
+| [[09-Pruebas-y-resultados]] | 339 pruebas en verde, qué cubre cada fichero y la matriz de códigos |
 | [[10-Git-y-commits]] | Los commits reales de la entrega |
 | [[11-Docker-y-CI]] | Por qué no se incorporaron |
 | [[12-Limitaciones-y-pendientes]] | Lo que queda abierto y quién debería decidirlo |
@@ -35,5 +35,5 @@ una interfaz web de gestión para el profesorado.
 ## Estado final verificado
 
 - `python manage.py check` → sin problemas.
-- `python manage.py test` → **`Ran 324 tests ... OK`** (punto de partida: 61 pruebas, 21 fallando).
+- `python manage.py test` → **`Ran 339 tests ... OK`** (punto de partida: 61 pruebas, 21 fallando).
 - `requirements.txt` **intacto**: 4 dependencias, ninguna añadida.

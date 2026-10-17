@@ -15,8 +15,8 @@ constancia escrita para que la ausencia sea una decisión y no un olvido.
 1. **El entorno ya permite desarrollar, probar y entregar sin ellos.** El proyecto tiene cuatro
    dependencias (`requirements.txt`), una base de datos **SQLite** que viene con Python, plantillas de
    Django servidas por `runserver` y una suite que se ejecuta con un único comando:
-   `python manage.py test` → **`Ran 324 tests ... OK`**. Docker no añade nada que falte para
-   developing, probar ni entregar en el aula.
+   `python manage.py test` → **`Ran 339 tests ... OK`**. Docker no añade nada que falte para
+   desarrollar, probar ni entregar en el aula.
 2. **El alcance es académico.** El objetivo son cuatro entregables del laboratorio (contrato, cliente
    de consola, permisos y frontera del agente) más una interfaz de gestión. Reproducir una imagen de
    contenedor o un runner es trabajo de infraestructura que no puntúa en el objetivo del laboratorio.
@@ -36,8 +36,10 @@ constancia escrita para que la ausencia sea una decisión y no un olvido.
   lo asume de forma consciente.
 - **El entorno no es reproducible por imagen.** Quien clone el repositorio necesita Python 3.14 y las
   cuatro dependencias; no basta con `docker run`.
-- **No hay despliegue.** `DEBUG = True` y el `SECRET_KEY` de reserva siguen vigentes. Es correcto en un
-  aula e incorrecto fuera de ella (ver `docs/seguridad.md`).
+- **No hay despliegue.** El laboratorio **arranca en modo desarrollo por defecto** (`DJANGO_DEBUG=1`), sin
+  HTTPS y sin servidor estático. Desde `a82978e` ya no hay secretos en el código ni valores fijos de
+  `DEBUG`: ambos salen del entorno y el arranque falla cerrado sin ellos. Es correcto en un aula e
+  incorrecto fuera de ella (ver `docs/seguridad.md` y `docs/seguridad-interfaz.md`).
 
 ## Cómo se mitiga hoy, sin infraestructura
 
