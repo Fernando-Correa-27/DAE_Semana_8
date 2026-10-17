@@ -1,6 +1,8 @@
 from rest_framework.permissions import BasePermission
 
-AGENT_GROUP = "agente"
+from .services import AGENT_GROUP, may, method_of, role_of
+
+__all__ = ["AGENT_GROUP", "AgentPermission"]
 
 
 class AgentPermission(BasePermission):
@@ -12,9 +14,10 @@ class AgentPermission(BasePermission):
       - anybody else who is logged in can only read;
       - an unknown method is denied (deny by default).
 
-    TODO(team): implement it. As it stands, `return True` lets everything through, so the
-    agent's token can delete and `python manage.py test quiz.tests.test_permissions` fails.
+    The table itself lives in services.METHODS_BY_ROLE, so a future interface asks the same
+    question and cannot answer it differently. Anonymous users are not decided here: DRF's
+    IsAuthenticated already answers them with a 401, never a 403.
     """
 
     def has_permission(self, request, view):
-        return True  # TODO(team): replace this line with the rule above
+        return may(role_of(getattr(request, "user", None)), method_of(request, view))

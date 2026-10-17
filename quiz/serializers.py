@@ -1,7 +1,7 @@
-from django.db import transaction
 from rest_framework import serializers
 
 from .models import Choice, Exam, Question
+from .services import QuizRuleError, create_question, update_question, validate_question_choices
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -29,24 +29,13 @@ class QuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at"]
 
     def validate_choices(self, value):
-        if len(value) < 2:
-            raise serializers.ValidationError("Una pregunta necesita al menos dos opciones.")
-        if sum(1 for choice in value if choice.get("is_correct")) != 1:
-            raise serializers.ValidationError("Debe haber exactamente una opción correcta.")
-        return value
+        try:
+            return validate_question_choices(value)
+        except QuizRuleError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
 
     def create(self, validated_data):
-        choices = validated_data.pop("choices")
-        with transaction.atomic():
-            question = Question.objects.create(**validated_data)
-            Choice.objects.bulk_create(Choice(question=question, **choice) for choice in choices)
-        return question
+        return create_question(validated_data["exam"], validated_data["text"], validated_data["choices"])
 
     def update(self, instance, validated_data):
-        choices = validated_data.pop("choices", None)
-        with transaction.atomic():
-            instance = super().update(instance, validated_data)
-            if choices is not None:  # sent choices replace the old ones
-                instance.choices.all().delete()
-                Choice.objects.bulk_create(Choice(question=instance, **choice) for choice in choices)
-        return instance
+        return update_question(instance, choices=validated_data.pop("choices", None), **validated_data)
