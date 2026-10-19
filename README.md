@@ -1,4 +1,4 @@
-# API headless de cuestionarios + interfaz de gestión — S08 (DAE)
+﻿# API headless de cuestionarios + interfaz de gestión — S08 (DAE)
 
 Laboratorio de la **semana 8** de Desarrollo de Aplicaciones Empresariales. El repositorio expone un
 dominio de **exámenes, preguntas y opciones** (Django + Django REST Framework) de **dos maneras**:
@@ -289,6 +289,25 @@ Las opciones viajan **anidadas** (`choices`) y el examen viaja como **identifica
 | `questions_partial_update` | `/api/questions/{id}/` | PATCH | Modifica solo lo enviado. Sin `choices`, **las opciones no se tocan**; con `choices`, **las reemplazan** | — | `{"text": "Nuevo enunciado"}` | Objeto actualizado | 200 |
 | `questions_destroy` | `/api/questions/{id}/` | DELETE | Borra la pregunta. Solo la persona | — | — | Sin cuerpo | 204 |
 
+### Opciones
+
+Las opciones viven **anidadas** dentro de la pregunta (campo `choices`) y **también** como
+recurso autónomo, donde la pregunta se referencia por su identificador.
+
+| Recurso | Endpoint | Método | Descripción | Parámetros | Cuerpo JSON de ejemplo | Respuesta esperada | HTTP |
+|---|---|---|---|---|---|---|---|
+| `options_list` | `/api/options/` | GET | Lista paginada de opciones | `?question=<id>`, `?search=<texto>`, `?page=<n>` | — | `{count, next, previous, results:[{id, question, text, is_correct}]}` | 200 |
+| `options_create` | `/api/options/` | POST | Añade una opción a una pregunta | — | `{"question": 1, "text": "Un estilo de arquitectura", "is_correct": true}` | `{"id": 3, "question": 1, "text": "...", "is_correct": true}` | 201 |
+| `options_retrieve` | `/api/options/{id}/` | GET | Detalle de una opción | — | — | `{"id": 3, "question": 1, "text": "...", "is_correct": false}` | 200 |
+| `options_update` | `/api/options/{id}/` | PUT / PATCH | Reemplaza o modifica parcialmente la opción | — | `{"text": "Editada"}` | Opción actualizada | 200 |
+| `options_destroy` | `/api/options/{id}/` | DELETE | Borra la opción. Solo la persona | — | — | Sin cuerpo | 204 |
+
+Este recurso respeta la misma invariante del dominio, palabra por palabra: **400** si se
+intenta marcar una segunda opción correcta en una pregunta que ya tiene una, si se
+desmarca la única correcta, o si se borra la única correcta. Por eso, cambiar cuál es la
+respuesta correcta de una pregunta se hace con `PUT /api/questions/{id}/`, que reemplaza
+el conjunto entero de una sola vez.
+
 ### Contrato y documentación
 
 | Endpoint | Método | Descripción | HTTP |
@@ -331,7 +350,7 @@ un campo viene con tipo incorrecto, el `exam` no existe, o `?exam=` no es un ide
 python manage.py test
 ```
 
-**Resultado real de la última ejecución: `Ran 339 tests ... OK`.**
+**Resultado real de la última ejecución: `Ran 365 tests ... OK`.**
 
 | Módulo | Qué cubre |
 |---|---|---|
@@ -348,6 +367,8 @@ python manage.py test
 | `quiz/tests/test_web.py` | Login/logout, CRUD por HTTP, 302 del anónimo, 403 por rol, CSRF, activos. |
 | `quiz/tests/test_web_review.py` | Anuncio único del error, opción correcta conservada tras un POST inválido, últimos exámenes, listado de preguntas, una sola página. |
 | `quiz/tests/test_web_gaps.py` | Objetos inexistentes, paginación, verbos, sesión, límites de campo, no-staff, contenido del detalle. |
+| `quiz/tests/test_options_api.py` | El recurso `/api/options/`: lectura, filtros, escritura y los tres 400 de la invariante. |
+| `quiz/tests/test_csp_docs.py` | Que la `Content-Security-Policy` del visor del contrato permite su CDN y la de la interfaz no lo hace. |
 
 Runner: `python manage.py test` (el repositorio no adopta `pytest`).
 

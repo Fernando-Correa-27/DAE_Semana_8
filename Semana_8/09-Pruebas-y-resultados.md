@@ -1,4 +1,4 @@
-# 09 · Pruebas y resultados
+﻿# 09 · Pruebas y resultados
 
 Volver al [[00-Indice]] · Anterior: [[08-Seguridad]] · Siguiente: [[10-Git-y-commits]]
 
@@ -8,7 +8,7 @@ Volver al [[00-Indice]] · Anterior: [[08-Seguridad]] · Siguiente: [[10-Git-y-c
 python manage.py test
 ```
 
-**`Ran 339 tests ... OK`** · y `python manage.py check` → sin problemas.
+**`Ran 365 tests ... OK`** · y `python manage.py check` → sin problemas.
 
 | Momento | Resultado |
 |---|---|
@@ -16,7 +16,7 @@ python manage.py test
 | Después de `cf61a11` | Partes 2 y 3 implementadas |
 | Después de `7c87fd9` | Interfaz web |
 | Después de `7992f2a` | Revisión corregida y cobertura ampliada → **324 OK** |
-| Después de `a82978e` | Endurecimiento de configuración (SUI-01/02/04/05) + `test_config_hardening.py` → **339 OK** |
+| Después de `a82978e` | Endurecimiento de configuración (SUI-01/02/04/05) + `test_config_hardening.py` → **365 OK** |
 
 Runner: **`python manage.py test`**. El repositorio no adopta `pytest` ni `pytest-django`, y nada de lo
 implementado obliga a cambiarlo.
@@ -106,7 +106,7 @@ Se declara explícitamente para no presentar como verde lo que es una revisión 
 2. Toda regla de negocio necesita su caso inválido: mínimo 2 opciones, exactamente 1 correcta.
 3. Todo permiso necesita su matriz: rol × método × recurso.
 4. Todo filtro necesita su caso mal escrito (el `?exam=abc` es el ejemplo).
-5. Regresión obligatoria tras tocar `settings.py`: **está cubierta** (339 OK).
+5. Regresión obligatoria tras tocar `settings.py`: **está cubierta** (365 OK).
 6. Antes de cerrar un cambio: casos borde y de regresión.
 
 ## Verificaciones manuales que complementan las pruebas

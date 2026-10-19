@@ -1,4 +1,4 @@
-# Decisión: por qué NO hay Docker ni CI en este laboratorio
+﻿# Decisión: por qué NO hay Docker ni CI en este laboratorio
 
 - **Autor:** Documentador
 - **Fecha:** 2026-10-16
@@ -15,7 +15,7 @@ constancia escrita para que la ausencia sea una decisión y no un olvido.
 1. **El entorno ya permite desarrollar, probar y entregar sin ellos.** El proyecto tiene cuatro
    dependencias (`requirements.txt`), una base de datos **SQLite** que viene con Python, plantillas de
    Django servidas por `runserver` y una suite que se ejecuta con un único comando:
-   `python manage.py test` → **`Ran 339 tests ... OK`**. Docker no añade nada que falte para
+   `python manage.py test` → **`Ran 365 tests ... OK`**. Docker no añade nada que falte para
    desarrollar, probar ni entregar en el aula.
 2. **El alcance es académico.** El objetivo son cuatro entregables del laboratorio (contrato, cliente
    de consola, permisos y frontera del agente) más una interfaz de gestión. Reproducir una imagen de

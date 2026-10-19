@@ -1,4 +1,4 @@
-# 11 · Docker y CI
+﻿# 11 · Docker y CI
 
 Volver al [[00-Indice]] · Anterior: [[10-Git-y-commits]] · Siguiente: [[12-Limitaciones-y-pendientes]]
 
@@ -17,7 +17,7 @@ Documento completo: `docs/decisiones-docker-ci.md`.
 - **SQLite**, que viene con Python. Sin servidor de base de datos, sin credenciales, sin migración
   inicial.
 - **Plantillas y CSS servidos por `runserver`**: sin `node`, sin bundler, sin artefactos de compilación.
-- **Una suite, un comando**: `python manage.py test` → **`Ran 339 tests ... OK`**.
+- **Una suite, un comando**: `python manage.py test` → **`Ran 365 tests ... OK`**.
 
 Docker no añade nada que falte para hacer el trabajo del laboratorio.
 

@@ -1,4 +1,4 @@
-# Requisitos y criterios de aceptación — API headless de cuestionarios (S08 · lab extra)
+﻿# Requisitos y criterios de aceptación — API headless de cuestionarios (S08 · lab extra)
 
 > **Autor:** Analista de requisitos y producto
 > **Fecha:** 2026-10-16 · **Fase:** A/B (solo análisis y documentación; **no** se ha tocado código de producción)
@@ -13,10 +13,10 @@
 >
 > **Hecho comprobado (coordinador, repositorio en el estado actual):**
 >
-> - `python manage.py test` → **`Ran 339 tests ... OK`**. Las Partes 2 y 3 están implementadas
+> - `python manage.py test` → **`Ran 365 tests ... OK`**. Las Partes 2 y 3 están implementadas
 >   (commits `cf61a11`); la interfaz web existe (`7c87fd9`); la revisión se corrigió y se amplió la
 >   cobertura (`7992f2a`); los hallazgos críticos de configuración se cerraron (`a82978e`, que subió la
->   suite de 324 a 339 con `quiz/tests/test_config_hardening.py`).
+>   suite de 324 a 365 con `quiz/tests/test_config_hardening.py`).
 > - **R-UI-02** y **R-UI-04** están **completados** (tabla de preguntas con filtro por examen y búsqueda
 >   por texto, con URL compartible). Ver la fila de cada uno en §8.1.
 > - **R-REP-03 ha cambiado de estado en `a82978e`:** ya no hay `SECRET_KEY` ni `DEBUG` fijos en el código
@@ -343,7 +343,7 @@ que el resultado sea correcto con cualquiera de ellas:
 | R-REP-04 | `.gitignore` excluye secretos y artefactos | `.env`, `db.sqlite3`, `agent_audit.jsonl`, `schema.yml`, `.secret_key`, `.venv/`, `__pycache__/` | HECHO (`.gitignore:1-8`) | Imprescindible |
 | R-REP-05 | Ningún token ni clave versionado, y **sin imprimirse por defecto** | `grep` de valores de token/clave en el repo → 0 coincidencias; `seed_quiz` **solo** imprime tokens con `--show-tokens` y nunca la contraseña | HECHO por lectura y **verificado**: `test_config_hardening.py::SeedOutputTests`; `.gitignore` cubre `.secret_key` | Imprescindible |
 | R-REP-06 | Estructura de paquetes coherente | `config/` (proyecto), `quiz/` (API), `agent/` (frontera), `quizctl.py` (cliente), `quiz/tests/` (pruebas) | HECHO | Imprescindible |
-| R-REP-07 | `python manage.py test` deja los 4 módulos en verde | `test_api`, `test_agent`, `test_quizctl`, `test_permissions` → todos OK | HECHO: **`Ran 339 tests ... OK`** (324 antes de `a82978e`) | Imprescindible |
+| R-REP-07 | `python manage.py test` deja los 4 módulos en verde | `test_api`, `test_agent`, `test_quizctl`, `test_permissions` → todos OK | HECHO: **`Ran 365 tests ... OK`** (324 antes de `a82978e`) | Imprescindible |
 | R-REP-08 | El contrato es regenerable y ** legible sin token** (lo consume `agent/gateway.py:52` sin credencial) | `python manage.py spectacular --file schema.yml` produce el esquema **y** `GET /api/schema/?format=json` sin `Authorization` → 200 | PENDIENTE de verificación → Q-11 | Imprescindible |
 | R-REP-09 | Convenciones del curso | Código, nombres y comentarios en inglés; entregables en español; PEP 8 | HECHO (`AGENTS.md`, `README.md:117-119`) | Imprescindible |
 | R-REP-10 | Protocolo de equipo documentado | `AGENTS.md` + `opencode.json` presentes | HECHO | Recomendado |
@@ -473,14 +473,14 @@ implementar R-UI-01…14:
 ### 10.1 Imprescindible (bloquea la entrega del laboratorio)
 
 > **Estado 2026-10-16: T-IMP-1 a T-IMP-4 están completados** (`cf61a11`, `7992f2a`; suite en verde con
-> 339 pruebas tras `a82978e`). T-IMP-5 a T-IMP-8 se resuelven o se registran abajo. La columna *Estado* es nueva.
+> 365 pruebas tras `a82978e`). T-IMP-5 a T-IMP-8 se resuelven o se registran abajo. La columna *Estado* es nueva.
 
 | # | Tarea | Requisitos | Depende de | Estado |
 |---|---|---|---|---|
 | T-IMP-1 | Implementar `quizctl.exit_code_for` (mapeo de estados → códigos 0–6) | R-API-21…26 | — | ✅ Completado (`quizctl.py:48-63`) |
 | T-IMP-2 | Implementar `quizctl.build_question_payload` (`:ok` final, sin validar) | R-API-27…29 | — | ✅ Completado (`quizctl.py:66-91`) |
 | T-IMP-3 | Implementar `quiz.permissions.AgentPermission` (4 ramas de la regla + denegar por defecto) | R-API-47…53 | — | ✅ Completado (`quiz/permissions.py` + tabla en `quiz/services.py:20-25`) |
-| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 | ✅ Completado: `Ran 339 tests ... OK` |
+| T-IMP-4 | Cerrar `python manage.py test` en verde | R-REP-07 | T-IMP-1, 2, 3 | ✅ Completado: `Ran 365 tests ... OK` |
 | T-IMP-5 | **Decidir** el contrato de `question_count` en respuestas de escritura | R-SER-08 | — | 🟡 **Abierto.** No se ha tocado el serializador entregado; sigue faltando la clave en 201/200 |
 | T-IMP-6 | **Decidir** el comportamiento de `?exam=` no numérico (ignorar vs 400) | R-VIE-08 | — | ✅ **Resuelto:** ahora da **400** nombrando el parámetro (`quiz/views.py:12-27`) |
 | T-IMP-7 | **Decidir** si el agente puede modificar exámenes (PUT/PATCH) | R-API-54 | — | ✅ **Resuelto** por ADR-0003: el agente lee, crea y modifica, **nunca borra** |
@@ -598,5 +598,5 @@ implementar R-UI-01…14:
 - [x] Prioriza, y lista dependencias, ambigüedades, riesgos y preguntas abiertas.
 - [x] No afirma que ninguna prueba se haya ejecutado en esta fase.
 - [x] Trazabilidad requisito → implementación → prueba en `docs/trazabilidad.md`.
-- [x] **Actualización `a82978e`:** requisitos y cifras al día (339 pruebas), con los requisitos nuevos
+- [x] **Actualización `a82978e`:** requisitos y cifras al día (365 pruebas), con los requisitos nuevos
       **R-REP-15** y **R-REP-16** y los riesgos **R-15** y **R-16** añadidos.

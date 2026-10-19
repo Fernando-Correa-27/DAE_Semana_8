@@ -1,4 +1,4 @@
-# 08 · Seguridad
+﻿# 08 · Seguridad
 
 Volver al [[00-Indice]] · Anterior: [[07-Interfaz-grafica]] · Siguiente: [[09-Pruebas-y-resultados]]
 
@@ -31,7 +31,7 @@ seguridad, auditoría de la interfaz) y `docs/frontera-ia.md` (arquitecto de IA)
 - **`seed_quiz` ya no imprime los tokens** sin `--show-tokens`; sin ese flag resume los datos y explica
   cómo obtenerlos. `--password` nunca imprime la contraseña.
 - **15 pruebas nuevas** en `quiz/tests/test_config_hardening.py` que fijan todo lo anterior ante
-  regresión. Suite: `Ran 339 tests ... OK`.
+  regresión. Suite: `Ran 365 tests ... OK`.
 
 Informe y detalle: `docs/seguridad-interfaz.md` (§«Estado tras la corrección») y
 `docs/trazabilidad.md` §5 y §7.

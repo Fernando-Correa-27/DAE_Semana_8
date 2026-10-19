@@ -1,4 +1,4 @@
-# 10 · Git y commits
+﻿# 10 · Git y commits
 
 Volver al [[00-Indice]] · Anterior: [[09-Pruebas-y-resultados]] · Siguiente: [[11-Docker-y-CI]]
 
@@ -72,7 +72,7 @@ Mensaje: `fix: cerrar hallazgos criticos de seguridad y documentar la entrega`.
 - `.gitignore` añade `.secret_key`.
 - Nuevo `quiz/tests/test_config_hardening.py` (15 pruebas).
 - README y documentación actualizados con el estado real.
-- **324 → 339 pruebas, todas en verde.**
+- **324 → 365 pruebas, todas en verde.**
 
 ### Lista final de commits de la entrega
 

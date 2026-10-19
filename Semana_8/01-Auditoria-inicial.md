@@ -1,4 +1,4 @@
-# 01 · Auditoría inicial
+﻿# 01 · Auditoría inicial
 
 Volver al [[00-Indice]] · Siguiente: [[02-Equipo-de-agentes]]
 
@@ -27,7 +27,7 @@ documento propio**: ni `AGENTS.md`, ni `opencode.json`, ni definiciones de agent
 | Momento | Resultado |
 |---|---|
 | Antes de empezar | **61 pruebas, 21 fallando**: 18 errores en `test_quizctl` y 3 fallos en `test_permissions`, por las Partes 2 y 3 sin implementar |
-| Al cierre | **`Ran 339 tests ... OK`** (324 antes de `a82978e`) |
+| Al cierre | **`Ran 365 tests ... OK`** (324 antes de `a82978e`) |
 
 `test_api` y `test_agent` pasaban desde el principio; el hueco estaba íntegro en los dos entregables
 pendientes.

@@ -1,4 +1,4 @@
-# 03 · Requisitos y aceptación
+﻿# 03 · Requisitos y aceptación
 
 Volver al [[00-Indice]] · Anterior: [[02-Equipo-de-agentes]] · Siguiente: [[04-Arquitectura-y-ADR]]
 
@@ -67,7 +67,7 @@ como el formulario de la interfaz. Ver [[04-Arquitectura-y-ADR]].
 
 - [x] Las cuatro partes del laboratorio implementadas.
 - [x] La interfaz gráfica existe y está verificada en vivo.
-- [x] `python manage.py test` en verde: **339 pruebas**.
+- [x] `python manage.py test` en verde: **365 pruebas**.
 - [x] Cada requisito con un criterio comprobable (estado HTTP, clave del JSON, mensaje o conteo).
 - [x] Se distingue **hecho / hipótesis / pendiente** en cada fila.
 - [x] **No** se inventa ningún requisito del campus: el texto oficial de la rúbrica no está en el

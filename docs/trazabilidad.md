@@ -1,4 +1,4 @@
-# Matriz de trazabilidad — requisito → implementación prevista → prueba
+﻿# Matriz de trazabilidad — requisito → implementación prevista → prueba
 
 > **Autor:** Analista de requisitos y producto · **Fecha:** 2026-10-16 · **Fase:** A/B (análisis y documentación)
 > Documento gemelo de `docs/requisitos.md`. Los **ID de requisito** son los de ese documento.
@@ -23,7 +23,7 @@
 >
 > **Evidencia de referencia (verificada por el coordinador sobre el repositorio actual):**
 >
-> - `python manage.py test` → **`Ran 339 tests ... OK`** (era 61 pruebas con 21 fallos al empezar; 324 antes de los arreglos de seguridad de `a82978e`).
+> - `python manage.py test` → **`Ran 365 tests ... OK`** (era 61 pruebas con 21 fallos al empezar; 324 antes de los arreglos de seguridad de `a82978e`).
 > - Línea base: **61 pruebas, 21 fallando** — 18 errores en `test_quizctl` y 3 fallos en
 >   `test_permissions`, por las Partes 2 y 3 sin implementar.
 > - `python manage.py check` → sin problemas.
@@ -37,7 +37,7 @@
 > | Parte 2 (`quizctl.py`) | R-API-21…29 🔴 → ✅ (implementado y con la suite en verde) |
 > | Parte 3 (`quiz/permissions.py`) | R-API-47…51 🔴 → ✅; R-API-53 🟡 → ✅; R-API-54 ⚪ → ✅ (decidido en ADR-0003) |
 > | Validación del filtro | R-VIE-08 ⚪ → ✅ (`?exam=` no numérico ahora da **400**, no se ignora) |
-> | Repositorio | R-REP-01 🟡 → ✅ (README reescrito), R-REP-07 🔴 → ✅ (339 OK), R-REP-13 🟡 → ✅ (existen `docs/` y 3 ADR) |
+> | Repositorio | R-REP-01 🟡 → ✅ (README reescrito), R-REP-07 🔴 → ✅ (365 OK), R-REP-13 🟡 → ✅ (existen `docs/` y 3 ADR) |
 > | Interfaz web | R-UI-01…R-UI-12, R-UI-14 y R-UI-T1…T7 🔴 → ✅ o 🟡, con la interfaz implementada y verificada en vivo |
 > | **Endurecimiento de configuración (`a82978e`)** | R-REP-03 🔴 → 🟡 **parcial**: ya **no** hay `SECRET_KEY` ni `DEBUG=True` fijos en el código (entorno → `.secret_key` generado; con `DEBUG` apagado el arranque falla cerrado), pero el laboratorio **sigue arrancando en desarrollo por defecto** y sin HTTPS. R-REP-05 🟡 → ✅ (`seed_quiz` solo imprime tokens con `--show-tokens`). R-API-20 🟡 → 🟡 **parcial**: el 500 con detalle técnico desaparece cuando `DJANGO_DEBUG=0` |
 > | **Cabeceras de seguridad** | `X_FRAME_OPTIONS = "DENY"` + CSP `default-src 'self'; frame-ancestors 'none'` solo en HTML (SUI-05 cerrado), con el `<script>` inline movido a `quiz/static/quiz/js/app.js` |
@@ -72,7 +72,7 @@
 ## 1. Resumen de cobertura
 
 > **Instantánea de la fase de análisis.** Los números de la tabla de abajo **ya no describen el
-> repositorio**: el resumen real de esta entrega es la suite en verde (**339 pruebas**) más las filas
+> repositorio**: el resumen real de esta entrega es la suite en verde (**365 pruebas**) más las filas
 > corregidas de §2 a §6. La tabla se conserva como registro del punto de partida.
 
 | Bloque | Requisitos | ✅ cubierto | 🟡 parcial | 🔴 pendiente | ⚪ decisión |
@@ -258,7 +258,7 @@
 | R-REP-04 | `.gitignore` incluye ahora también `.secret_key` | Lectura del archivo + `test_config_hardening.py::SecretKeyTests::test_secret_key_file_is_not_tracked_by_git` | 🟢 cubierto |
 | R-REP-05 | `seed_quiz.py` **ya no imprime** los tokens por defecto: solo con `--show-tokens`, y **nunca** la contraseña | `test_config_hardening.py::SeedOutputTests` (3 pruebas: sin flag, con flag, contraseña nunca impresa); revisión de `README.md`, `docs/` y notas: solo aparecen **nombres** de variables | 🟢 cubierto (la impresión es ahora opt-in) |
 | R-REP-06 | `config/`, `quiz/`, `agent/`, `quizctl.py`, `quiz/tests/` | Estructura del árbol | 🟢 cubierto |
-| R-REP-07 | `python manage.py test` | Ejecución real: **`Ran 339 tests ... OK`** (línea base: 61 pruebas, 21 fallando; 324 antes de `a82978e`) | 🟢 cubierto |
+| R-REP-07 | `python manage.py test` | Ejecución real: **`Ran 365 tests ... OK`** (línea base: 61 pruebas, 21 fallando; 324 antes de `a82978e`) | 🟢 cubierto |
 | R-REP-08 | `README.md` (comando `spectacular`); `.gitignore:7` excluye `schema.yml`. **Contrato legible sin token: confirmado** | `test_api.py` (esquema) + verificado en vivo: `/api/schema/` y `/api/docs/` → **200 sin token**. **Q-11 queda cerrada** | 🟢 cubierto |
 | R-REP-09 | `AGENTS.md` §7; `README.md` (sección final) | Revisión de estilo | 🟢 cubierto |
 | R-REP-10 | `AGENTS.md`, `opencode.json:1-4` | Lectura | 🟢 cubierto |
@@ -306,7 +306,7 @@ y `test_services.py`.
 | R-UI-T4 | La UI usa el **ORM**, no la API por HTTP (ADR-0002) | `test_query_counts.py::QueryLayerTests` | 🟢 decidido y verificado |
 | R-UI-T5 | **Validador único** compartido por serializador y formset | `test_services.py::SameVerdictTests` (era I5: el fichero **no existía**) | 🟢 cubierto |
 | R-UI-T6 | La UI no expone acciones R2 ni borrados masivos | `test_web.py::AccessTests` | 🟢 cubierto |
-| R-UI-T7 | **Regresión:** los cuatro entregables siguen verdes tras tocar `settings.py` | Suite completa: `Ran 339 tests ... OK` | 🟢 cubierto |
+| R-UI-T7 | **Regresión:** los cuatro entregables siguen verdes tras tocar `settings.py` | Suite completa: `Ran 365 tests ... OK` | 🟢 cubierto |
 
 ---
 
@@ -344,7 +344,7 @@ y `test_services.py`.
 | 22 | Arranque con `DEBUG=False` y sin `DJANGO_SECRET_KEY` (y sin `DJANGO_ALLOWED_HOSTS`) | `test_config_hardening.py::StartupGuardTests` | R-REP-03 | ✅ **cerrada** (`a82978e`: el arranque falla con `ImproperlyConfigured`; antes dependía de una decisión sin tomar) |
 | 23 | `SpectacularAPIView` acepta o no token → fijar la postura del contrato | `test_api.py` + verificado en vivo | R-VIE-18, R-REP-08, Q-11 | ✅ cerrada |
 | 24 | **Frontera de confianza** (sesión ↔ API, token ↔ UI, CSRF) | `test_web.py::FrontierTests`, `test_http_matrix.py::SessionTokenFrontierTests` | R-UI-T3 | ✅ cerrada |
-| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | Suite completa (339 OK) | R-UI-T7 | ✅ cerrada |
+| 25 | **Regresión:** los 4 entregables siguen verdes tras tocar `settings.py` | Suite completa (365 OK) | R-UI-T7 | ✅ cerrada |
 | 26 | Veredicto RN-01/RN-02 compartido: la misma pregunta inválida se rechaza por API **y** por formulario | `test_services.py::SameVerdictTests` | R-UI-T5 | ✅ cerrada |
 | 27 | Matriz completa por rol **en la interfaz** (el agente edita y no ve «Eliminar») | `test_permissions.py` | R-UI-07, ADR-0003 §verificación | 🔴 **abierta** (parcial: hoy hay un 403 global probado) |
 | 28 | Contraste ≥ 4.5:1 verificado con herramienta | `test_web.py` | R-UI-11 | 🔴 **abierta** (hoy es revisión a ojo) |
@@ -362,7 +362,7 @@ y `test_services.py`.
 
 1. ~~`backend-django` implementa `quizctl.exit_code_for` + `build_question_payload`~~ → **hecho** (`cf61a11`).
 2. ~~`seguridad` + `backend-django` implementan `AgentPermission`~~ → **hecho** (`cf61a11`, tabla compartida en ADR-0003).
-3. ~~`tester` ejecuta `python manage.py test` y confirma **R-REP-07**~~ → **hecho**: `Ran 339 tests ... OK`.
+3. ~~`tester` ejecuta `python manage.py test` y confirma **R-REP-07**~~ → **hecho**: `Ran 365 tests ... OK`.
 4. `tester` cubre los huecos de §7 → **hecho en su mayor parte** (ficheros nuevos en `7992f2a`); quedan
    cuatro abiertos, listados al final de §7.
 5. `arquitecto` decide Q-04, Q-05, Q-06 → **Q-05 y Q-06 resueltas** (400 en `?exam=` no entero; el agente
@@ -380,7 +380,7 @@ y `test_services.py`.
 - **Fase A/B (lo que sigue):** no se había ejecutado ninguna prueba en el momento de escribir el
   documento; los estados `✅ cubierto` significaban *prueba presente*, no *prueba verde*.
 - **Estado actual (añadido al cerrar la implementación):** `python manage.py test` se ejecutó de verdad
-  y devolvió **`Ran 339 tests ... OK`**, y la matriz HTTP y la interfaz se comprobaron en vivo contra el
+  y devolvió **`Ran 365 tests ... OK`**, y la matriz HTTP y la interfaz se comprobaron en vivo contra el
   servidor. Ese es el fundamento de las marcas 🟢 de las filas corregidas.
 - Las citas `archivo:línea` se obtuvieron **leyendo** el repositorio; son verificables.
 - **No se ha inventado ningún requisito del campus**: el texto oficial de la rúbrica no está en el
