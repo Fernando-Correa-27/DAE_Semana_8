@@ -106,6 +106,32 @@ def validate_question_choices(choice_dicts):
     return choices
 
 
+def validate_option_write(question, is_correct: bool, choice=None) -> None:
+    """Ask the same invariant when ONE option is written, instead of the whole list.
+
+    ``validate_question_choices`` sees every option of a question at once, which is what
+    a formset and the nested API can offer. The options endpoint writes a single row,
+    so the rule is asked in its two halves: a correct option cannot join a question that
+    already has one, and the only correct option of a question cannot stop being it.
+
+    ``choice`` is the option being written, or ``None`` when it is being created. The
+    decision belongs to the domain, so every interface gets the same answer and the same
+    wording (ADR-0002).
+    """
+    others = question.choices.filter(is_correct=True)
+    if choice is not None:
+        others = others.exclude(pk=choice.pk)
+    if is_correct and others.exists():
+        raise QuizRuleError("Una pregunta no puede tener más de una opción correcta.")
+    if not is_correct and choice is not None and choice.is_correct and not others.exists():
+        raise QuizRuleError("Una pregunta necesita al menos una opción correcta.")
+
+
+def validate_option_removal(choice) -> None:
+    """Deleting an option is, for this invariant, exactly the same as unmarking it."""
+    validate_option_write(choice.question, is_correct=False, choice=choice)
+
+
 def _replace_choices(question, choice_dicts) -> None:
     """The choices sent replace the previous ones."""
     question.choices.all().delete()

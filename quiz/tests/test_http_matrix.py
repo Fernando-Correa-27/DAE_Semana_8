@@ -179,10 +179,10 @@ class ReadMatrixTests(StatusMatrixTestCase):
                            "person · GET questions · page not a number")
 
     def test_the_api_root_is_200_with_a_token(self):
-        """GET /api/ -> 200 listing the two collections."""
+        """GET /api/ -> 200 listing the three collections (exams, questions and options)."""
         response = self.as_person().get("/api/")
         self.assert_status(200, response, "person · GET api root")
-        self.assertEqual(sorted(response.json()), ["exams", "questions"])
+        self.assertEqual(sorted(response.json()), ["exams", "options", "questions"])
 
 
 # --- creations -----------------------------------------------------------------------------------
