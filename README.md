@@ -33,6 +33,17 @@ técnico en [`docs/arquitectura.md`](docs/arquitectura.md).
 
 ---
 
+## Documentos
+
+| Documento | Para qué |
+|---|---|
+| [`GUIA-DE-EJECUCION.md`](GUIA-DE-EJECUCION.md) | Instalación, configuración, ejecución y pruebas, paso a paso |
+| [`GUIA-DE-USO-API.md`](GUIA-DE-USO-API.md) | Cómo consumir la API desde Postman, una aplicación o un agente: tokens, permisos y errores |
+| [`Entregable.md`](Entregable.md) | Informe técnico de la actividad con la tabla de la API y la evidencia de las pruebas |
+| [`docs/`](docs/) | Arquitectura, requisitos, seguridad, modelo de datos y revisiones |
+
+---
+
 ## Requisitos
 
 - **Python 3.14.4** (probado en esa versión).
